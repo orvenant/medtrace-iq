@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   detectDeviceSubsystem,
   matchRecallsForIssue,
+  matchSopsForIssue,
   evaluateIssueCompliance,
   buildBlastRadiusGraph,
   generateAuditMarkdown,
@@ -175,4 +176,32 @@ test('buildBlastRadiusGraph and generateAuditMarkdown produce complete traceable
 
   assert.ok(md.includes('MED-2'));
   assert.ok(md.includes('FDA 21 CFR 820'));
+});
+
+test('matchSopsForIssue directly connects Teamwork Graph SOPs to matching Jira design controls', () => {
+  const issue = {
+    id: '10010',
+    key: 'MED-1',
+    summary: 'Infusion Pump Occlusion Pressure Sensor Firmware v4.2 Threshold Update',
+    description: 'References SOP-QMS-104 Volumetric Infusion Pump Verification Protocol.',
+    labels: ['infusion-pump'],
+  };
+  const sops = [
+    { id: 'pg-1', title: 'SOP-QMS-104: Volumetric Infusion Pump Occlusion Verification Protocol', ownerName: 'Amin' },
+    { id: 'pg-2', title: 'SOP-QMS-209: Cardiac Pacemaker Cybersecurity Plan', ownerName: 'Amin' },
+  ];
+  const matched = matchSopsForIssue(issue, detectDeviceSubsystem(issue), sops);
+  assert.equal(matched.length, 1);
+  assert.equal(matched[0].id, 'pg-1');
+
+  const ev = evaluateIssueCompliance({
+    issue,
+    twgSignals: { confluencePages: sops, teams: [{ id: 't1', displayName: 'Team Vault' }] },
+  });
+  const graph = buildBlastRadiusGraph({
+    project: { key: 'MED', name: 'MedTrace Devices', leadName: 'Amin' },
+    evaluations: [ev],
+    twg: { confluencePages: sops, teams: [{ id: 't1', displayName: 'Team Vault' }] },
+  });
+  assert.ok(graph.edges.some((e) => e.from === 'issue:MED-1' && e.to === 'sop:pg-1' && e.label === 'TWG_GOVERNS_SOP'));
 });

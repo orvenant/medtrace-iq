@@ -409,6 +409,13 @@ export default function ProjectCockpit({ projectKey }) {
                         <td data-label="Subsystem">
                           <div style={{ fontWeight: 600 }}>{ev.subsystem.label}</div>
                           <div className="kpi-sub">{ev.subsystem.deviceClass}</div>
+                          {ev.matchedSops?.[0] && (
+                            <div style={{ marginTop: 4 }}>
+                              <span className="badge badge-brand" title={ev.matchedSops[0].title}>
+                                📄 {ev.matchedSops[0].title.slice(0, 18)}…
+                              </span>
+                            </div>
+                          )}
                         </td>
                         <td data-label="Score">
                           <strong className="mono" style={{ fontSize: 15 }}>{ev.score}</strong>
@@ -736,6 +743,20 @@ export default function ProjectCockpit({ projectKey }) {
                 Connect Claude Code, Cursor, Antigravity, or Rovo Studio directly to MedTrace IQ's 6 regulatory tools via OAuth 2.1:
               </p>
               <pre className="code-block">{JSON.stringify({ mcpServers: { 'medtrace-iq': { url: mcpEndpoint } } }, null, 2)}</pre>
+              <div className="pill-row" style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(
+                      JSON.stringify({ mcpServers: { 'medtrace-iq': { url: mcpEndpoint } } }, null, 2)
+                    );
+                    setToast('Copied MedTrace MCP server JSON config to clipboard.');
+                  }}
+                >
+                  Copy MCP Config
+                </button>
+              </div>
               <div className="kpi-sub" style={{ marginTop: 8 }}>
                 Enable external exposure in <strong>Atlassian Administration → Apps → Connected apps → MedTrace IQ</strong>. Pair with our open-source <span className="mono">SKILL.md</span> for pre-merge FDA release gating.
               </div>

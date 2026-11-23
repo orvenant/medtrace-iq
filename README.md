@@ -60,6 +60,19 @@ Includes a 1-click idempotent **Seed MedTech Demo** button inside the app to pop
 ---
 
 ## Architecture & Privacy ("Runs on Atlassian")
+
+```mermaid
+flowchart LR
+  FDA["Live US openFDA API\n(Device Enforcement Recalls)"] --> ENG["MedTrace IQ\n5-Pillar Ship-Confidence Engine\n(Atlassian Forge nodejs24.x)"]
+  TWG["Atlassian Teamwork Graph\n(11 Curated Queries:\nSOPs · Teams · Goals · Dev Artifacts)"] --> ENG
+  JIRA["Jira Cloud REST v3\n(Design Controls · CAPAs · Audit Comments)"] <--> ENG
+  KVS["Forge Storage (@forge/kvs)\n(Checklists · Policy · Immutable Ledger)"] <--> ENG
+  ENG --> UI["Custom UI (React 18)\nProject Cockpit & Issue Guardrail"]
+  ENG --> ROVO["MedTrace QMS Copilot\nrovo:agent + 3 rovo:skill + 6 action"]
+  ENG --> MCP["MedTrace MCP (rovo:mcp)\nhttps://mcp.atlassian.com/forge/f6caf1a8-..."]
+  MCP --> EXT["External Coding Agents\n(Claude · Cursor · Antigravity + SKILL.md)"]
+```
+
 - 100% native Atlassian Forge (`nodejs24.x` ARM64 runtime + `@forge/kvs` + Custom UI React 18).
 - Zero customer data or PII ever leaves Atlassian Cloud—openFDA calls strictly pass generic medical device category keywords (e.g. `"infusion pump"`, `"pacemaker"`). See [PRIVACY.md](./PRIVACY.md).
 

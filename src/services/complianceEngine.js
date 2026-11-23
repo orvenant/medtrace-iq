@@ -118,6 +118,34 @@ export function matchRecallsForIssue(issue, subsystem, allRecalls = []) {
     .slice(0, 5);
 }
 
+export function matchSopsForIssue(issue, subsystem, confluencePages = []) {
+  const issueTokens = new Set(
+    `${issue.summary || ''} ${issue.description || ''} ${(issue.labels || []).join(' ')} ${subsystem?.label || ''} ${subsystem?.fdaKeyword || ''}`
+      .toLowerCase()
+      .split(/[^a-z0-9-]+/)
+      .filter((t) => t.length >= 4 && !['with', 'that', 'this', 'from', 'into', 'under', 'update', 'review', 'protocol', 'device', 'system', 'design', 'control'].includes(t))
+  );
+
+  const matched = [];
+  for (const pg of confluencePages) {
+    const titleLower = String(pg.title || '').toLowerCase();
+    let score = 0;
+    // Direct SOP code mention in issue text (e.g. SOP-QMS-104)
+    const sopCodeMatch = titleLower.match(/sop-[a-z0-9-]+/i);
+    if (sopCodeMatch && `${issue.summary || ''} ${issue.description || ''}`.toLowerCase().includes(sopCodeMatch[0])) {
+      score += 10;
+    }
+    for (const tok of issueTokens) {
+      if (titleLower.includes(tok)) score += 3;
+    }
+    if (score > 0) {
+      matched.push({ ...pg, relevanceScore: score });
+    }
+  }
+
+  return matched.sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 3);
+}
+
 /**
  * Evaluate a single Jira issue under the 5-pillar FDA 21 CFR 820 / ISO 13485 Ship-Confidence Rubric.
  */
@@ -133,6 +161,7 @@ export function evaluateIssueCompliance({
   const blockOnClassI = policy.blockOnUnmitigatedClassI !== false;
   const requireQa = policy.requireQaSignOff !== false;
   const subsystem = detectDeviceSubsystem(issue);
+  const matchedSops = matchSopsForIssue(issue, subsystem, twgSignals.confluencePages || []);
 
   const blockingGaps = [];
   const positiveSignals = [];
@@ -187,9 +216,17 @@ export function evaluateIssueCompliance({
 
   if (checklist.sopOwnerVerified || checklist.linkedSopReference) {
     p3 += 10;
-    positiveSignals.push('Affected SOP document & owner verified');
+    positiveSignals.push(
+      matchedSops[0]
+        ? `SOP "${matchedSops[0].title}" owner (${matchedSops[0].ownerName}) verified`
+        : 'Affected SOP document & owner verified'
+    );
+  } else if (matchedSops.length > 0) {
+    p3 += 7;
+    positiveSignals.push(`Auto-linked Confluence SOP via Teamwork Graph: ${matchedSops[0].title}`);
+    blockingGaps.push(`Confirm SOP owner impact sign-off with ${matchedSops[0].ownerName} (${matchedSops[0].title.slice(0, 38)})`);
   } else if (sopCount > 0) {
-    p3 += 6;
+    p3 += 5;
     blockingGaps.push('Confluence SOP pages found in Teamwork Graph — confirm SOP owner impact sign-off');
   } else {
     blockingGaps.push('No verified Confluence SOP owner linked to this change');
@@ -293,6 +330,7 @@ export function evaluateIssueCompliance({
     classICount,
     classIICount,
     matchedRecalls,
+    matchedSops,
     checklist,
     signOff,
     blockingGaps,
@@ -302,6 +340,7 @@ export function evaluateIssueCompliance({
 
 /**
  * Build interactive Blast-Radius & Teamwork Graph visualization nodes & edges.
+ * Directly links matched openFDA recalls -> Jira Design Controls -> matched Confluence SOPs (TWG) -> Teams & Goals (TWG).
  */
 export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fdaRecalls = [] }) {
   const nodes = [];
@@ -317,12 +356,27 @@ export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fda
     meta: { projectKey: project.key, lead: project.leadName, totalIssues: evaluations.length },
   });
 
-  // Top Jira Work Items (up to 8 highest-signal issues)
   const sortedIssues = [...evaluations]
     .sort((a, b) => a.score - b.score)
-    .slice(0, 8);
+    .slice(0, 7);
 
   const recallNodeIds = new Set();
+  const sopNodeIds = new Set();
+  const sopToIssueLinked = new Set();
+
+  // Register Teamwork Graph Confluence SOP Pages first
+  for (const pg of (twg.confluencePages || []).slice(0, 5)) {
+    const pId = `sop:${pg.id}`;
+    sopNodeIds.add(pId);
+    nodes.push({
+      id: pId,
+      type: 'sop',
+      label: pg.title.slice(0, 34),
+      sublabel: `Owner: ${pg.ownerName}`,
+      status: 'CONTEXT',
+      meta: pg,
+    });
+  }
 
   for (const ev of sortedIssues) {
     const issueNodeId = `issue:${ev.issueKey}`;
@@ -341,17 +395,12 @@ export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fda
         verdict: ev.verdict,
         score: ev.score,
         blockingGaps: ev.blockingGaps,
+        matchedSops: ev.matchedSops || [],
         assignee: ev.assigneeName,
       },
     });
-    edges.push({
-      id: `${rootId}->${issueNodeId}`,
-      from: rootId,
-      to: issueNodeId,
-      label: ev.isCapa ? 'CAPA_CONTROL' : 'DESIGN_CONTROL',
-    });
 
-    // Connect top matched live FDA recall
+    // Connect top matched live FDA recall -> Jira Issue
     const topRecall = ev.matchedRecalls?.[0];
     if (topRecall) {
       const rId = `fda:${topRecall.recallNumber}`;
@@ -361,7 +410,7 @@ export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fda
           id: rId,
           type: 'fda',
           label: topRecall.recallNumber,
-          sublabel: `${topRecall.classification} · ${topRecall.recallingFirm.slice(0, 26)}`,
+          sublabel: `${topRecall.classification} · ${topRecall.recallingFirm.slice(0, 24)}`,
           status: topRecall.classification === 'Class I' ? 'HOLD' : 'CONDITIONAL',
           meta: topRecall,
         });
@@ -375,9 +424,43 @@ export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fda
         });
       }
     }
+
+    // Connect Jira Issue -> Semantically Matched Confluence SOP(s) from Teamwork Graph!
+    let linkedAnySop = false;
+    for (const sop of (ev.matchedSops || []).slice(0, 2)) {
+      const sId = `sop:${sop.id}`;
+      if (sopNodeIds.has(sId)) {
+        linkedAnySop = true;
+        sopToIssueLinked.add(sId);
+        edges.push({
+          id: `${issueNodeId}->${sId}`,
+          from: issueNodeId,
+          to: sId,
+          label: 'TWG_GOVERNS_SOP',
+        });
+      }
+    }
+    if (!linkedAnySop) {
+      edges.push({
+        id: `${issueNodeId}->${rootId}`,
+        from: issueNodeId,
+        to: rootId,
+        label: ev.isCapa ? 'CAPA_CONTROL' : 'DESIGN_CONTROL',
+      });
+    }
   }
 
-  // Add top live FDA recalls if none matched directly yet
+  // Ensure every SOP connects to the Release Hub as well
+  for (const sId of sopNodeIds) {
+    edges.push({
+      id: `${sId}->${rootId}`,
+      from: sId,
+      to: rootId,
+      label: sopToIssueLinked.has(sId) ? 'TWG_SOP_GOVERNANCE' : 'TWG_CONFLUENCE_SOP',
+    });
+  }
+
+  // Fallback live FDA recalls if none matched directly yet
   if (recallNodeIds.size === 0) {
     for (const r of (fdaRecalls || []).slice(0, 3)) {
       const rId = `fda:${r.recallNumber}`;
@@ -386,7 +469,7 @@ export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fda
         id: rId,
         type: 'fda',
         label: r.recallNumber,
-        sublabel: `${r.classification} · ${r.recallingFirm.slice(0, 26)}`,
+        sublabel: `${r.classification} · ${r.recallingFirm.slice(0, 24)}`,
         status: r.classification === 'Class I' ? 'HOLD' : 'CONDITIONAL',
         meta: r,
       });
@@ -394,46 +477,38 @@ export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fda
     }
   }
 
-  // Teamwork Graph Teams
-  for (const team of (twg.teams || []).slice(0, 4)) {
+  // Prioritize Regulatory/Security/Legal/Engineering Teamwork Graph Teams (up to 4 cleanly)
+  const prioritizedTeams = [...(twg.teams || [])].sort((a, b) => {
+    const scoreTeam = (t) =>
+      /vault|legal|security|regulatory|quality|platform|eng/i.test(`${t.displayName} ${t.description}`) ? 0 : 1;
+    return scoreTeam(a) - scoreTeam(b);
+  });
+
+  for (const team of prioritizedTeams.slice(0, 4)) {
     const tId = `team:${team.id}`;
     nodes.push({
       id: tId,
       type: 'team',
       label: team.displayName,
-      sublabel: `TWG Team (${team.sourceQuery || 'Teamwork Graph'})`,
+      sublabel: team.description ? team.description.slice(0, 28) : 'Teamwork Graph Team',
       status: 'CONTEXT',
       meta: team,
     });
-    edges.push({ id: `${tId}->${rootId}`, from: tId, to: rootId, label: 'TWG_TEAM' });
+    edges.push({ id: `${rootId}->${tId}`, from: rootId, to: tId, label: 'TWG_TEAM' });
   }
 
-  // Teamwork Graph Confluence SOP Pages
-  for (const pg of (twg.confluencePages || []).slice(0, 5)) {
-    const pId = `sop:${pg.id}`;
-    nodes.push({
-      id: pId,
-      type: 'sop',
-      label: pg.title.slice(0, 32),
-      sublabel: `SOP · Owner: ${pg.ownerName}`,
-      status: 'CONTEXT',
-      meta: pg,
-    });
-    edges.push({ id: `${rootId}->${pId}`, from: rootId, to: pId, label: 'TWG_CONFLUENCE_SOP' });
-  }
-
-  // Teamwork Graph Atlassian Goals
-  for (const goal of (twg.goals || []).slice(0, 3)) {
+  // Teamwork Graph Atlassian Goals (up to 2)
+  for (const goal of (twg.goals || []).slice(0, 2)) {
     const gId = `goal:${goal.id}`;
     nodes.push({
       id: gId,
       type: 'goal',
       label: goal.name.slice(0, 30),
-      sublabel: `Goal ${goal.key || ''} · ${goal.ownerName || 'Org'}`,
+      sublabel: `Goal ${goal.key || ''}`,
       status: 'CONTEXT',
       meta: goal,
     });
-    edges.push({ id: `${gId}->${rootId}`, from: gId, to: rootId, label: 'TWG_GOAL' });
+    edges.push({ id: `${rootId}->${gId}`, from: rootId, to: gId, label: 'TWG_GOAL' });
   }
 
   return { nodes, edges };
