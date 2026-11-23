@@ -13,13 +13,15 @@ async function runTwgQuery(queryName, graphqlQuery, variables = {}) {
     const durationMs = Date.now() - startedAt;
 
     if (!response.ok || (json?.errors && json.errors.length > 0 && !json?.data)) {
+      const errMsg = json?.errors?.[0]?.message || `HTTP ${status}`;
+      console.warn(`[TWG:${queryName}] error:`, errMsg);
       return {
         queryName,
         ok: false,
         status,
         durationMs,
         data: null,
-        error: json?.errors?.[0]?.message || `HTTP ${status}`,
+        error: errMsg,
       };
     }
 
@@ -58,7 +60,7 @@ export function buildUserAri(accountId) {
 export async function pingTeamworkGraph() {
   const res = await runTwgQuery(
     'echo',
-    `query MedTraceEcho { echo(myString: "MedTrace IQ Teamwork Graph Active") }`
+    `query medtrace_echo { echo(myString: "MedTrace IQ Teamwork Graph Active") }`
   );
   return {
     connected: Boolean(res.ok && res.data?.echo),
@@ -86,7 +88,7 @@ export async function fetchProjectTeamworkGraph({ cloudId, projectId, accountId 
     queries.push(
       runTwgQuery(
         'atlassianTeamsBySpace',
-        `query MedTraceTeamsBySpace($spaceAri: ID!) {
+        `query medtrace_teamsBySpace($spaceAri: ID!) {
           atlassianTeamsBySpace(spaceAri: $spaceAri, first: 15) {
             edges {
               node {
@@ -108,7 +110,7 @@ export async function fetchProjectTeamworkGraph({ cloudId, projectId, accountId 
     queries.push(
       runTwgQuery(
         'jiraSpaceWorkItems',
-        `query MedTraceSpaceWorkItems($spaceAri: ID!) {
+        `query medtrace_spaceWorkItems($spaceAri: ID!) {
           jiraSpaceWorkItems(spaceAri: $spaceAri, first: 25) {
             edges {
               node {
@@ -139,7 +141,7 @@ export async function fetchProjectTeamworkGraph({ cloudId, projectId, accountId 
     queries.push(
       runTwgQuery(
         'atlassianUserInTeams',
-        `query MedTraceUserTeams($userId: ID!) {
+        `query medtrace_userTeams($userId: ID!) {
           atlassianUserInTeams(userId: $userId, first: 15) {
             edges {
               node {
@@ -161,7 +163,7 @@ export async function fetchProjectTeamworkGraph({ cloudId, projectId, accountId 
     queries.push(
       runTwgQuery(
         'atlassianUserContent',
-        `query MedTraceUserContent($userId: ID!) {
+        `query medtrace_userContent($userId: ID!) {
           atlassianUserContent(userId: $userId, since: "P180D", first: 25) {
             edges {
               node {
@@ -194,7 +196,7 @@ export async function fetchProjectTeamworkGraph({ cloudId, projectId, accountId 
     queries.push(
       runTwgQuery(
         'atlassianUserGoalsAndProjects',
-        `query MedTraceUserGoals($userId: ID!) {
+        `query medtrace_userGoals($userId: ID!) {
           atlassianUserGoalsAndProjects(userId: $userId, first: 15) {
             edges {
               node {
@@ -284,7 +286,7 @@ export async function fetchProjectTeamworkGraph({ cloudId, projectId, accountId 
       topPages.map((pg) =>
         runTwgQuery(
           'confluencePageLinkedConfluencePages',
-          `query MedTraceLinkedPages($id: ID!) {
+          `query medtrace_linkedPages($id: ID!) {
             confluencePageLinkedConfluencePages(id: $id, first: 10) {
               edges {
                 node {
@@ -364,7 +366,7 @@ export async function fetchIssueTeamworkGraph({ cloudId, issueId, accountId }) {
     issueAri
       ? runTwgQuery(
           'jiraWorkItemGoals',
-          `query MedTraceIssueGoals($id: ID!) {
+          `query medtrace_issueGoals($id: ID!) {
             jiraWorkItemGoals(id: $id, first: 10) {
               edges {
                 node {
@@ -386,7 +388,7 @@ export async function fetchIssueTeamworkGraph({ cloudId, issueId, accountId }) {
     issueAri
       ? runTwgQuery(
           'jiraWorkItemComments',
-          `query MedTraceIssueComments($id: ID!) {
+          `query medtrace_issueComments($id: ID!) {
             jiraWorkItemComments(id: $id, since: "P180D", first: 15) {
               edges {
                 node {
@@ -408,7 +410,7 @@ export async function fetchIssueTeamworkGraph({ cloudId, issueId, accountId }) {
     issueAri
       ? runTwgQuery(
           'jiraWorkItemDevelopmentArtifacts',
-          `query MedTraceIssueDevArtifacts($id: ID!) {
+          `query medtrace_issueDevArtifacts($id: ID!) {
             jiraWorkItemDevelopmentArtifacts(id: $id, first: 15) {
               edges {
                 node {
@@ -435,7 +437,7 @@ export async function fetchIssueTeamworkGraph({ cloudId, issueId, accountId }) {
     issueAri
       ? runTwgQuery(
           'jiraWorkItemHierarchy',
-          `query MedTraceIssueHierarchy($id: ID!) {
+          `query medtrace_issueHierarchy($id: ID!) {
             jiraWorkItemHierarchy(id: $id, first: 15) {
               edges {
                 node {
@@ -457,7 +459,7 @@ export async function fetchIssueTeamworkGraph({ cloudId, issueId, accountId }) {
     userAri
       ? runTwgQuery(
           'atlassianUserInTeams',
-          `query MedTraceIssueUserTeams($userId: ID!) {
+          `query medtrace_issueUserTeams($userId: ID!) {
             atlassianUserInTeams(userId: $userId, first: 10) {
               edges {
                 node {
@@ -477,7 +479,7 @@ export async function fetchIssueTeamworkGraph({ cloudId, issueId, accountId }) {
     userAri
       ? runTwgQuery(
           'atlassianUserContent',
-          `query MedTraceIssueUserContent($userId: ID!) {
+          `query medtrace_issueUserContent($userId: ID!) {
             atlassianUserContent(userId: $userId, since: "P180D", first: 15) {
               edges {
                 node {
