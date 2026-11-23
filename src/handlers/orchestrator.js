@@ -20,6 +20,8 @@ import {
   getIssueComplianceStateMap,
   getCachedTwgSnapshot,
   setCachedTwgSnapshot,
+  isDemoPortfolioCalibrated,
+  markDemoPortfolioCalibrated,
 } from '../services/storageService';
 import { fetchRecallsForSubsystems, searchFdaDeviceRecalls } from '../services/openFdaService';
 import { fetchProjectTeamworkGraph, fetchIssueTeamworkGraph } from '../services/teamworkGraphService';
@@ -33,7 +35,7 @@ import {
 } from '../services/complianceEngine';
 
 export async function buildProjectCockpitData({ projectKey, cloudId, accountId }) {
-  const [user, project, issues, policy, ledger] = await Promise.all([
+  let [user, project, issues, policy, ledger] = await Promise.all([
     accountId ? Promise.resolve({ accountId, displayName: 'Jira Reviewer' }) : getCurrentUser(),
     getProjectDetails(projectKey),
     getProjectIssues(projectKey, 35),
@@ -42,6 +44,15 @@ export async function buildProjectCockpitData({ projectKey, cloudId, accountId }
   ]);
 
   const effectiveAccountId = accountId || user.accountId;
+
+  // One-time non-destructive calibration for seeded MedTech demo workspaces so Green (Ship Ready),
+  // Amber (Conditional), and Red (Regulatory Hold) states are immediately visible without overwriting user edits.
+  const demoIssuesPresent = issues.filter((i) => i.labels?.includes('medtrace-demo'));
+  if (demoIssuesPresent.length >= 4 && !(await isDemoPortfolioCalibrated(projectKey))) {
+    await hydrateDemoPortfolioStates({ projectKey, issues: demoIssuesPresent, user });
+    await markDemoPortfolioCalibrated(projectKey);
+    ledger = await getProjectAuditLedger(projectKey);
+  }
 
   // Detect unique medical device subsystems across project issues
   const detectedSubsystems = issues.map((iss) => detectDeviceSubsystem(iss));
@@ -307,16 +318,9 @@ export async function performSavePolicy({ projectKey, patch }) {
   return saveProjectPolicy(projectKey, patch);
 }
 
-export async function performSeedDemo({ projectKey }) {
-  const seedResult = await seedMedTechDemoIssues(projectKey);
-  const [user, issues] = await Promise.all([getCurrentUser(), getProjectIssues(projectKey, 40)]);
-
-  // Hydrate realistic Green (Ship Ready), Amber (Conditional), and Red (Regulatory Hold) portfolio states
-  // so evaluators immediately see a vivid 3x3 ISO 14971 Risk x Release Verdict Matrix.
-  const demoIssues = issues.filter((i) => i.labels?.includes('medtrace-demo'));
+async function hydrateDemoPortfolioStates({ projectKey, issues, user }) {
   let hydratedCount = 0;
-
-  for (const iss of demoIssues) {
+  for (const iss of issues) {
     const sub = detectDeviceSubsystem(iss);
     const [existingChecklist, existingSignOff] = await Promise.all([
       getIssueChecklist(iss.key),
@@ -331,7 +335,6 @@ export async function performSeedDemo({ projectKey }) {
     );
 
     if (sub.id === 'glucose-sensor' || sub.id === 'catheter') {
-      // SHIP READY (Green, 95-100/100)
       if (!alreadyCustomized) {
         await saveIssueChecklist(
           iss.key,
@@ -341,7 +344,7 @@ export async function performSeedDemo({ projectKey }) {
             sopOwnerVerified: true,
             fdaRecallReviewed: true,
           },
-          user.displayName || 'QA Lead'
+          user?.displayName || 'QA Lead'
         );
         hydratedCount += 1;
       }
@@ -351,13 +354,12 @@ export async function performSeedDemo({ projectKey }) {
           issueKey: iss.key,
           decision: 'Approved',
           rationale: `All FDA 21 CFR 820.30 design controls, ISO 14971 risk reviews, and live openFDA recall applicability checks passed for ${sub.label}.`,
-          actorAccountId: user.accountId,
-          actorName: user.displayName || 'QA Director',
+          actorAccountId: user?.accountId || 'qa-director',
+          actorName: user?.displayName || 'QA Director',
           scoreAtSignOff: 96,
         });
       }
     } else if (sub.id === 'pacemaker' || sub.id === 'defibrillator') {
-      // CONDITIONAL (Amber, 70-79/100): FDA recall reviewed & mitigated, pending final QA Approved sign-off
       if (!alreadyCustomized) {
         await saveIssueChecklist(
           iss.key,
@@ -367,7 +369,7 @@ export async function performSeedDemo({ projectKey }) {
             sopOwnerVerified: sub.id === 'defibrillator',
             fdaRecallReviewed: true,
           },
-          user.displayName || 'QA Lead'
+          user?.displayName || 'QA Lead'
         );
         hydratedCount += 1;
       }
@@ -377,14 +379,22 @@ export async function performSeedDemo({ projectKey }) {
           issueKey: iss.key,
           decision: 'Conditional',
           rationale: 'openFDA Class I/II cybersecurity parallels evaluated and mitigated; awaiting final Confluence SOP-QMS-209 owner sign-off.',
-          actorAccountId: user.accountId,
-          actorName: user.displayName || 'QA Reviewer',
+          actorAccountId: user?.accountId || 'qa-reviewer',
+          actorName: user?.displayName || 'QA Reviewer',
           scoreAtSignOff: 77,
         });
       }
     }
-    // Infusion Pump & ICU Ventilator intentionally stay in REGULATORY HOLD (Red) to demonstrate Class I gating!
   }
+  return hydratedCount;
+}
+
+export async function performSeedDemo({ projectKey }) {
+  const seedResult = await seedMedTechDemoIssues(projectKey);
+  const [user, issues] = await Promise.all([getCurrentUser(), getProjectIssues(projectKey, 40)]);
+  const demoIssues = issues.filter((i) => i.labels?.includes('medtrace-demo'));
+  const hydratedCount = await hydrateDemoPortfolioStates({ projectKey, issues: demoIssues, user });
+  await markDemoPortfolioCalibrated(projectKey);
 
   return {
     ...seedResult,

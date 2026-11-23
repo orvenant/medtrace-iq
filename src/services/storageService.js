@@ -167,6 +167,22 @@ export async function markTriggerAlerted(issueKey, recallNumber) {
   }
 }
 
+export async function isDemoPortfolioCalibrated(projectKey) {
+  try {
+    return Boolean(await kvs.get(safeKey('democal', projectKey)));
+  } catch {
+    return false;
+  }
+}
+
+export async function markDemoPortfolioCalibrated(projectKey) {
+  try {
+    await kvs.set(safeKey('democal', projectKey), { calibratedAt: new Date().toISOString() });
+  } catch (err) {
+    console.warn('[storage] markDemoPortfolioCalibrated warning:', err?.message);
+  }
+}
+
 export async function getIssueComplianceStateMap(issueKeys = []) {
   const entries = await Promise.all(
     issueKeys.map(async (key) => {

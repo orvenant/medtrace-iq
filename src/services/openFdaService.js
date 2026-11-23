@@ -89,7 +89,7 @@ export async function searchFdaDeviceRecalls({ keyword = '', classification = ''
   const cleanKw = sanitizeKeyword(keyword);
   const safeClass = ['Class I', 'Class II', 'Class III'].includes(classification) ? classification : '';
   const safeLimit = Math.max(1, Math.min(12, Number(limit) || 6));
-  const cacheSlug = `${cleanKw || 'all'}_${safeClass || 'any'}_${safeLimit}_${ongoingPreferred ? 'ong' : 'all'}`;
+  const cacheSlug = `v2_${cleanKw || 'all'}_${safeClass || 'any'}_${safeLimit}_${ongoingPreferred ? 'ong' : 'all'}`;
 
   const cached = await getCachedFdaQuery(cacheSlug);
   if (cached) {
@@ -104,31 +104,58 @@ export async function searchFdaDeviceRecalls({ keyword = '', classification = ''
   }
 
   try {
-    let raw = await queryOpenFdaRaw(buildSearchExpression(cleanKw, safeClass, ongoingPreferred), safeLimit);
+    // When no specific classification filter is requested, run a parallel Class I check alongside the general query
+    // so life-critical Class I enforcement recalls are NEVER buried beneath newer Class II records.
+    const [generalRaw, classIRaw] = await Promise.all([
+      queryOpenFdaRaw(buildSearchExpression(cleanKw, safeClass, ongoingPreferred), safeLimit),
+      !safeClass && cleanKw
+        ? queryOpenFdaRaw(buildSearchExpression(cleanKw, 'Class I', ongoingPreferred), Math.min(3, safeLimit)).catch(
+            () => ({ total: 0, results: [] })
+          )
+        : Promise.resolve({ total: 0, results: [] }),
+    ]);
+
+    let raw = generalRaw;
 
     // If ongoing-only returned empty for a niche keyword, broaden to all statuses
-    if (raw.results.length === 0 && ongoingPreferred) {
+    if (raw.results.length === 0 && classIRaw.results.length === 0 && ongoingPreferred) {
       raw = await queryOpenFdaRaw(buildSearchExpression(cleanKw, safeClass, false), safeLimit);
     }
 
     // If multi-word phrase returned empty, retry with primary medical noun
-    if (raw.results.length === 0 && cleanKw.includes(' ')) {
+    if (raw.results.length === 0 && classIRaw.results.length === 0 && cleanKw.includes(' ')) {
       const primaryToken = cleanKw.split(' ').find((t) => t.length >= 4) || cleanKw.split(' ')[0];
       raw = await queryOpenFdaRaw(buildSearchExpression(primaryToken, safeClass, false), safeLimit);
     }
 
-    const recalls = raw.results.map((r) => normalizeRecall(r, cleanKw || 'medical device'));
+    const mergedByRecall = new Map();
+    for (const item of [...(classIRaw.results || []), ...(raw.results || [])]) {
+      const norm = normalizeRecall(item, cleanKw || 'medical device');
+      if (!mergedByRecall.has(norm.recallNumber)) {
+        mergedByRecall.set(norm.recallNumber, norm);
+      }
+    }
+
+    const recalls = Array.from(mergedByRecall.values())
+      .sort((a, b) => {
+        const rank = { 'Class I': 0, 'Class II': 1, 'Class III': 2 };
+        const diff = (rank[a.classification] ?? 3) - (rank[b.classification] ?? 3);
+        if (diff !== 0) return diff;
+        return String(b.reportDate).localeCompare(String(a.reportDate));
+      })
+      .slice(0, safeLimit);
+
     const payload = {
       source: 'openFDA live',
       keyword: cleanKw,
       classification: safeClass || 'All',
-      totalAvailable: raw.total,
+      totalAvailable: Math.max(raw.total || 0, classIRaw.total || 0),
       recalls,
       fetchedAt: new Date().toISOString(),
     };
 
     await setCachedFdaQuery(cacheSlug, {
-      totalAvailable: raw.total,
+      totalAvailable: payload.totalAvailable,
       recalls,
     });
 
