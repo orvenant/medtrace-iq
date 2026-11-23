@@ -308,5 +308,89 @@ export async function performSavePolicy({ projectKey, patch }) {
 }
 
 export async function performSeedDemo({ projectKey }) {
-  return seedMedTechDemoIssues(projectKey);
+  const seedResult = await seedMedTechDemoIssues(projectKey);
+  const [user, issues] = await Promise.all([getCurrentUser(), getProjectIssues(projectKey, 40)]);
+
+  // Hydrate realistic Green (Ship Ready), Amber (Conditional), and Red (Regulatory Hold) portfolio states
+  // so evaluators immediately see a vivid 3x3 ISO 14971 Risk x Release Verdict Matrix.
+  const demoIssues = issues.filter((i) => i.labels?.includes('medtrace-demo'));
+  let hydratedCount = 0;
+
+  for (const iss of demoIssues) {
+    const sub = detectDeviceSubsystem(iss);
+    const [existingChecklist, existingSignOff] = await Promise.all([
+      getIssueChecklist(iss.key),
+      getIssueSignOff(iss.key),
+    ]);
+
+    const alreadyCustomized = Boolean(
+      existingChecklist.designVerification ||
+        existingChecklist.iso14971RiskReview ||
+        existingChecklist.sopOwnerVerified ||
+        existingChecklist.fdaRecallReviewed
+    );
+
+    if (sub.id === 'glucose-sensor' || sub.id === 'catheter') {
+      // SHIP READY (Green, 95-100/100)
+      if (!alreadyCustomized) {
+        await saveIssueChecklist(
+          iss.key,
+          {
+            designVerification: true,
+            iso14971RiskReview: true,
+            sopOwnerVerified: true,
+            fdaRecallReviewed: true,
+          },
+          user.displayName || 'QA Lead'
+        );
+        hydratedCount += 1;
+      }
+      if (!existingSignOff) {
+        await recordSignOffEntry({
+          projectKey,
+          issueKey: iss.key,
+          decision: 'Approved',
+          rationale: `All FDA 21 CFR 820.30 design controls, ISO 14971 risk reviews, and live openFDA recall applicability checks passed for ${sub.label}.`,
+          actorAccountId: user.accountId,
+          actorName: user.displayName || 'QA Director',
+          scoreAtSignOff: 96,
+        });
+      }
+    } else if (sub.id === 'pacemaker' || sub.id === 'defibrillator') {
+      // CONDITIONAL (Amber, 70-79/100): FDA recall reviewed & mitigated, pending final QA Approved sign-off
+      if (!alreadyCustomized) {
+        await saveIssueChecklist(
+          iss.key,
+          {
+            designVerification: sub.id === 'pacemaker',
+            iso14971RiskReview: true,
+            sopOwnerVerified: sub.id === 'defibrillator',
+            fdaRecallReviewed: true,
+          },
+          user.displayName || 'QA Lead'
+        );
+        hydratedCount += 1;
+      }
+      if (!existingSignOff && sub.id === 'pacemaker') {
+        await recordSignOffEntry({
+          projectKey,
+          issueKey: iss.key,
+          decision: 'Conditional',
+          rationale: 'openFDA Class I/II cybersecurity parallels evaluated and mitigated; awaiting final Confluence SOP-QMS-209 owner sign-off.',
+          actorAccountId: user.accountId,
+          actorName: user.displayName || 'QA Reviewer',
+          scoreAtSignOff: 77,
+        });
+      }
+    }
+    // Infusion Pump & ICU Ventilator intentionally stay in REGULATORY HOLD (Red) to demonstrate Class I gating!
+  }
+
+  return {
+    ...seedResult,
+    hydratedCount,
+    message: seedResult.seeded
+      ? `${seedResult.message} Configured balanced Ship Ready, Conditional, and Regulatory Hold portfolio states.`
+      : `Calibrated realistic Ship Ready / Conditional / Regulatory Hold demo states across ${projectKey} (${hydratedCount} updated).`,
+  };
 }

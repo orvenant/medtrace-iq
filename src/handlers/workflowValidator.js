@@ -1,8 +1,13 @@
 import api, { route } from '@forge/api';
 import { extractAdfText } from '../services/jiraService';
-import { detectDeviceSubsystem, evaluateIssueCompliance } from '../services/complianceEngine';
+import { detectDeviceSubsystem, matchRecallsForIssue, evaluateIssueCompliance } from '../services/complianceEngine';
 import { searchFdaDeviceRecalls } from '../services/openFdaService';
-import { getProjectPolicy, getIssueChecklist, getIssueSignOff } from '../services/storageService';
+import {
+  getProjectPolicy,
+  getIssueChecklist,
+  getIssueSignOff,
+  getCachedTwgSnapshot,
+} from '../services/storageService';
 
 /**
  * Jira Workflow Validator Lambda (`jira:workflowValidator`).
@@ -17,13 +22,14 @@ export async function validateReleaseTransition(args) {
     }
 
     const projectKey = issueKey.split('-')[0];
-    const [issueRes, policy, checklist, signOff] = await Promise.all([
+    const [issueRes, policy, checklist, signOff, cachedTwg] = await Promise.all([
       api.asApp().requestJira(
         route`/rest/api/3/issue/${issueKey}?fields=summary,description,labels,components,priority,status,assignee,issuelinks`
       ),
       getProjectPolicy(projectKey),
       getIssueChecklist(issueKey),
       getIssueSignOff(issueKey),
+      getCachedTwgSnapshot(projectKey),
     ]);
 
     if (!issueRes.ok) {
@@ -54,13 +60,21 @@ export async function validateReleaseTransition(args) {
       limit: 4,
       ongoingPreferred: true,
     });
+    const matchedRecalls = matchRecallsForIssue(issue, subsystem, fdaRes.recalls || []);
 
     const evaluation = evaluateIssueCompliance({
       issue,
       checklist,
       signOff,
-      matchedRecalls: fdaRes.recalls || [],
-      twgSignals: {},
+      matchedRecalls,
+      twgSignals: cachedTwg
+        ? {
+            teams: cachedTwg.teams || [],
+            confluencePages: cachedTwg.confluencePages || [],
+            goals: cachedTwg.goals || [],
+            devArtifacts: [],
+          }
+        : {},
       policy,
     });
 

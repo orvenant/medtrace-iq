@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  analyzeDesignControls,
   detectDeviceSubsystem,
   matchRecallsForIssue,
   matchSopsForIssue,
@@ -43,7 +44,7 @@ test('evaluateIssueCompliance enforces Regulatory Hold on unmitigated Class I FD
     key: 'MED-1',
     summary: 'Infusion Pump Occlusion Sensor Threshold Update',
     description:
-      'Design control specification for volumetric infusion pump downstream occlusion alarm threshold reduction from 18 seconds to 9 seconds with IEC 60601-2-24 compliance.',
+      'Design control specification for volumetric infusion pump downstream occlusion alarm threshold reduction from 18 seconds to 9 seconds with IEC 60601-2-24 compliance under SOP-QMS-104 verification protocol.',
     status: 'In Progress',
     statusCategory: 'indeterminate',
     priority: 'High',
@@ -279,4 +280,66 @@ test('computeExecutiveAnalytics aggregates 5-pillar averages and ISO 14971 Risk 
   assert.ok(md.includes('21 CFR Part 11 Cryptographic Integrity'));
   assert.ok(md.includes('VERIFIED VALID (SHA-256 Hash Chain)'));
   assert.ok(md.includes('abcdef1234567890'));
+});
+
+test('analyzeDesignControls rejects long filler text and rewards real FDA 21 CFR 820.30 specifications', () => {
+  const filler = analyzeDesignControls({
+    summary: 'Update internal widget display',
+    description:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud.',
+    labels: [],
+  });
+  assert.equal(filler.score, 0);
+  assert.equal(filler.passedCount, 0);
+
+  const realSpec = analyzeDesignControls({
+    summary: 'Hemodialysis Ultrafiltration Pressure Alarm Threshold',
+    description:
+      'Updates ultrafiltration pressure threshold from 250 mmHg to 210 mmHg per IEC 60601-2-16 and ISO 14971 FMEA hazard control. Reference SOP-QMS-410 verification protocol.',
+    labels: ['dialysis'],
+  });
+  assert.equal(realSpec.score, 15);
+  assert.equal(realSpec.passedCount, 4);
+});
+
+test('expanded 16-device catalog detects dialysis, anesthesia, oximeter, neurostimulator, implant, IVD, sterilizer, laser', () => {
+  assert.equal(detectDeviceSubsystem({ summary: 'Hemodialysis ultrafiltration pump' }).id, 'dialysis');
+  assert.equal(detectDeviceSubsystem({ summary: 'Anesthesia vaporizer flow sensor' }).id, 'anesthesia');
+  assert.equal(detectDeviceSubsystem({ summary: 'Pulse oximeter SpO2 alarm latency' }).id, 'patient-monitor');
+  assert.equal(detectDeviceSubsystem({ summary: 'Cochlear implant neurostimulator electrode' }).id, 'neurostimulator');
+  assert.equal(detectDeviceSubsystem({ summary: 'Titanium spinal implant torque spec' }).id, 'orthopedic-implant');
+  assert.equal(detectDeviceSubsystem({ summary: 'Molecular PCR IVD assay reagent lot' }).id, 'ivd-diagnostics');
+  assert.equal(detectDeviceSubsystem({ summary: 'Steam autoclave sterilizer cycle temp' }).id, 'sterilizer');
+  assert.equal(detectDeviceSubsystem({ summary: 'Ophthalmic retinal laser calibration' }).id, 'ophthalmic-laser');
+});
+
+test('matchRecallsForIssue prioritizes DIRECT_FAILURE_MODE overlaps over generic category parallels', () => {
+  const issue = {
+    summary: 'Infusion Pump Occlusion Alarm Firmware Update',
+    description: 'Adjusts downstream occlusion pressure alarm delay.',
+    labels: ['infusion-pump'],
+  };
+  const sub = detectDeviceSubsystem(issue);
+  const recalls = [
+    {
+      recallNumber: 'Z-GENERIC-1',
+      classification: 'Class I',
+      matchedKeyword: 'infusion pump',
+      productDescription: 'Infusion Pump Stand Kit',
+      reasonForRecall: 'Packaging label typo on outer shipping carton.',
+    },
+    {
+      recallNumber: 'Z-DIRECT-2',
+      classification: 'Class I',
+      matchedKeyword: 'infusion pump',
+      productDescription: 'Volumetric Infusion Pump',
+      reasonForRecall: 'Downstream occlusion alarm failure causing delayed drug delivery.',
+    },
+  ];
+  const matched = matchRecallsForIssue(issue, sub, recalls);
+  assert.equal(matched[0].recallNumber, 'Z-DIRECT-2');
+  assert.equal(matched[0].matchStrength, 'DIRECT_FAILURE_MODE');
+  assert.ok(matched[0].failureModeMatches.includes('occlusion'));
+  assert.ok(matched[0].failureModeMatches.includes('alarm'));
+  assert.equal(matched[1].matchStrength, 'SUBSYSTEM_PARALLEL');
 });

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { view, events } from '@forge/bridge';
 import { callBackend } from '../utils/bridge';
 import ScoreGauge, { verdictBadge } from './ScoreGauge';
+import { IconRefresh, IconShieldCheck, IconShieldAlert, StatusDot } from './Icons';
 
 export default function ExecutiveGadget({ context }) {
   const isEdit = context?.extension?.entryPoint === 'edit';
@@ -152,18 +153,24 @@ export default function ExecutiveGadget({ context }) {
             <div className="pill-row" style={{ marginBottom: 4 }}>
               <strong style={{ fontSize: 15 }}>{cockpit.project.key}</strong>
               {verdictBadge(s.overallVerdict)}
-              <span className={`badge ${chain?.valid ? 'badge-ok' : 'badge-danger'}`}>
-                {chain?.valid ? '21 CFR Part 11 SHA-256 Valid' : 'Chain Warning'}
+              <span className={`badge ${chain?.valid ? 'badge-ok' : 'badge-danger'} inline-flex-row`}>
+                {chain?.valid ? <IconShieldCheck size={12} /> : <IconShieldAlert size={12} />}
+                <span>{chain?.valid ? '21 CFR Part 11 SHA-256 Valid' : 'Chain Warning'}</span>
               </span>
             </div>
             <div className="kpi-sub">{cockpit.project.name}</div>
-            <div className="kpi-sub">
-              🟢 {s.shipReadyCount} Ready · 🟡 {s.conditionalCount} Conditional · 🔴 {s.holdCount} Hold · {s.capaCount} CAPAs
+            <div className="kpi-sub inline-flex-row" style={{ flexWrap: 'wrap' }}>
+              <span className="inline-flex-row"><StatusDot tone="ok" /> {s.shipReadyCount} Ready</span>
+              <span>·</span>
+              <span className="inline-flex-row"><StatusDot tone="warn" /> {s.conditionalCount} Conditional</span>
+              <span>·</span>
+              <span className="inline-flex-row"><StatusDot tone="danger" /> {s.holdCount} Hold</span>
+              <span>· {s.capaCount} CAPAs</span>
             </div>
           </div>
         </div>
         <button type="button" className="btn btn-sm" onClick={loadSummary} disabled={loading}>
-          ↻ Refresh
+          <IconRefresh size={13} /> Refresh
         </button>
       </div>
 

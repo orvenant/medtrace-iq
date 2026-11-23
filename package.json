@@ -1,6 +1,6 @@
 {
   "name": "medtrace-iq",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "MedTrace IQ — FDA 21 CFR 820 & ISO 13485 Regulatory Context, Blast-Radius & Ship-Confidence Engine for Atlassian Jira, Rovo, MCP & Teamwork Graph",
   "license": "Apache-2.0",
   "private": true,

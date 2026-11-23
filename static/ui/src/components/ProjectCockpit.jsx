@@ -4,6 +4,20 @@ import ScoreGauge, { fdaClassBadge, verdictBadge } from './ScoreGauge';
 import ContextGraphSvg from './ContextGraphSvg';
 import { CapaModal, SignOffModal } from './CapaModal';
 import IssueAuditDrawer from './IssueAuditDrawer';
+import {
+  IconBolt,
+  IconDownload,
+  IconExternalLink,
+  IconFileText,
+  IconLock,
+  IconPlus,
+  IconRefresh,
+  IconShieldAlert,
+  IconShieldCheck,
+  IconSliders,
+  IconSparkle,
+  StatusDot,
+} from './Icons';
 
 const TABS = [
   { id: 'overview', label: 'Release Readiness Cockpit' },
@@ -323,7 +337,7 @@ export default function ProjectCockpit({ projectKey }) {
         </div>
         <div className="hero-actions">
           <button type="button" className="btn btn-rovo" onClick={() => handleOpenRovo()}>
-            ✦ Launch MedTrace Rovo
+            <IconSparkle size={14} /> Launch MedTrace Rovo
           </button>
           <button
             type="button"
@@ -337,13 +351,13 @@ export default function ProjectCockpit({ projectKey }) {
               setCapaOpen(true);
             }}
           >
-            + New CAPA
+            <IconPlus size={14} /> New CAPA
           </button>
           <button type="button" className="btn" onClick={handleSeedDemo} disabled={busy}>
-            ⚡ Seed MedTech Demo
+            <IconBolt size={14} /> Seed MedTech Demo
           </button>
           <button type="button" className="btn" onClick={loadCockpit} disabled={loading}>
-            ↻ Refresh
+            <IconRefresh size={14} /> Refresh
           </button>
         </div>
       </header>
@@ -374,8 +388,12 @@ export default function ProjectCockpit({ projectKey }) {
         <div className="kpi-card">
           <div className="kpi-label">Design Controls Audited</div>
           <div className="kpi-value">{s.totalIssues}</div>
-          <div className="kpi-sub">
-            🟢 {s.shipReadyCount} Ready · 🟡 {s.conditionalCount} Cond · 🔴 {s.holdCount} Hold
+          <div className="kpi-sub inline-flex-row" style={{ flexWrap: 'wrap' }}>
+            <span className="inline-flex-row"><StatusDot tone="ok" /> {s.shipReadyCount} Ready</span>
+            <span>·</span>
+            <span className="inline-flex-row"><StatusDot tone="warn" /> {s.conditionalCount} Cond</span>
+            <span>·</span>
+            <span className="inline-flex-row"><StatusDot tone="danger" /> {s.holdCount} Hold</span>
           </div>
         </div>
         <div className="kpi-card">
@@ -394,8 +412,9 @@ export default function ProjectCockpit({ projectKey }) {
           <div className="kpi-value" style={{ color: 'var(--brand)' }}>
             {s.twgTeamsCount + s.twgSopCount + s.twgGoalsCount}
           </div>
-          <div className="kpi-sub">
-            {s.twgConnected ? '🟢 Live TWG' : '⚠️ Check TWG Scopes'} · {s.twgTeamsCount} Teams · {s.twgSopCount} SOPs · {s.twgGoalsCount} Goals
+          <div className="kpi-sub inline-flex-row" style={{ flexWrap: 'wrap' }}>
+            <StatusDot tone={s.twgConnected ? 'ok' : 'warn'} />
+            <span>{s.twgConnected ? 'Live TWG' : 'Pending Scope'} · {s.twgTeamsCount} Teams · {s.twgSopCount} SOPs · {s.twgGoalsCount} Goals</span>
           </div>
         </div>
         <div className="kpi-card">
@@ -499,7 +518,7 @@ export default function ProjectCockpit({ projectKey }) {
                     <h2 className="card-title">Project 5-Pillar FDA 21 CFR 820 Coverage</h2>
                     <div className="kpi-sub">Average maturity across all {s.totalIssues} audited work item(s)</div>
                   </div>
-                  <span className="badge badge-brand">v3.0 Engine</span>
+                  <span className="badge badge-brand">v3.1 Engine</span>
                 </div>
                 {(data.analytics.pillarAverages || []).map((p) => (
                   <div className="pillar-row" key={p.key}>
@@ -565,7 +584,7 @@ export default function ProjectCockpit({ projectKey }) {
 
             {filteredEvaluations.length === 0 ? (
               <div className="banner banner-info">
-                <span>No work items match this filter. Clear filters above or click "⚡ Seed MedTech Demo" to populate realistic cardiac/infusion medical device tickets!</span>
+                <span>No work items match this filter. Clear filters above or click "Seed MedTech Demo" to populate regulated medical device tickets.</span>
               </div>
             ) : (
               <div className="table-wrapper" tabIndex={0} role="region" aria-labelledby="release-table-caption">
@@ -615,8 +634,9 @@ export default function ProjectCockpit({ projectKey }) {
                           <div className="kpi-sub">{ev.subsystem.deviceClass}</div>
                           {ev.matchedSops?.[0] && (
                             <div style={{ marginTop: 4 }}>
-                              <span className="badge badge-brand" title={ev.matchedSops[0].title}>
-                                📄 {ev.matchedSops[0].title.slice(0, 18)}…
+                              <span className="badge badge-brand inline-flex-row" title={ev.matchedSops[0].title}>
+                                <IconFileText size={11} />
+                                <span>{ev.matchedSops[0].title.slice(0, 18)}…</span>
                               </span>
                             </div>
                           )}
@@ -631,6 +651,11 @@ export default function ProjectCockpit({ projectKey }) {
                             <div className="pill-row">
                               {ev.classICount > 0 && <span className="badge badge-danger">{ev.classICount} Class I</span>}
                               {ev.classIICount > 0 && <span className="badge badge-warn">{ev.classIICount} Class II</span>}
+                              {ev.directFailureModeCount > 0 && (
+                                <span className="badge badge-purple" title="Direct technical failure-mode overlap with live FDA recall">
+                                  Failure Match
+                                </span>
+                              )}
                             </div>
                           ) : (
                             <span className="badge badge-ok">Clear</span>
@@ -646,7 +671,7 @@ export default function ProjectCockpit({ projectKey }) {
                               className="btn btn-sm"
                               onClick={() => setSelectedIssueKey(ev.issueKey)}
                             >
-                              Inspect
+                              <IconSliders size={12} /> Inspect
                             </button>
                             <button
                               type="button"
@@ -669,7 +694,7 @@ export default function ProjectCockpit({ projectKey }) {
                                 setCapaOpen(true);
                               }}
                             >
-                              + CAPA
+                              <IconPlus size={12} /> CAPA
                             </button>
                             <button
                               type="button"
@@ -680,7 +705,7 @@ export default function ProjectCockpit({ projectKey }) {
                                 )
                               }
                             >
-                              ✦ Rovo
+                              <IconSparkle size={12} /> Rovo
                             </button>
                           </div>
                         </td>
@@ -808,10 +833,10 @@ export default function ProjectCockpit({ projectKey }) {
                         setCapaOpen(true);
                       }}
                     >
-                      + Create Impact CAPA
+                      <IconPlus size={12} /> Create Impact CAPA
                     </button>
                     <button type="button" className="btn btn-sm" onClick={() => openExternalUrl(r.fdaUrl)}>
-                      FDA Portal ↗
+                      FDA Portal <IconExternalLink size={12} />
                     </button>
                   </div>
                 </article>
@@ -831,10 +856,13 @@ export default function ProjectCockpit({ projectKey }) {
             return (
               <div className={`banner ${chain.valid ? 'banner-ok' : 'banner-danger'}`}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 13.5 }}>
-                    {chain.valid
-                      ? '🔐 FDA 21 CFR Part 11 Cryptographic Audit Chain: VERIFIED INTACT (SHA-256)'
-                      : `⚠️ TAMPER ALERT DETECTED at ${chain.brokenEntryId}: ${chain.brokenReason || 'Hash mismatch'}`}
+                  <div className="inline-flex-row" style={{ fontWeight: 700, fontSize: 13.5 }}>
+                    {chain.valid ? <IconShieldCheck size={16} /> : <IconShieldAlert size={16} />}
+                    <span>
+                      {chain.valid
+                        ? 'FDA 21 CFR Part 11 Cryptographic Audit Chain: VERIFIED INTACT (SHA-256)'
+                        : `TAMPER ALERT DETECTED at ${chain.brokenEntryId}: ${chain.brokenReason || 'Hash mismatch'}`}
+                    </span>
                   </div>
                   <div className="kpi-sub" style={{ color: 'inherit', opacity: 0.9, marginTop: 2 }}>
                     {chain.verifiedChainedEntries} SHA-256 chained record(s) · {chain.legacyEntries || 0} legacy record(s) · Head Digest:{' '}
@@ -847,7 +875,7 @@ export default function ProjectCockpit({ projectKey }) {
                   onClick={handleVerifyChain}
                   disabled={verifyingChain}
                 >
-                  {verifyingChain ? 'Verifying SHA-256…' : '🔐 Verify Chain Now'}
+                  <IconLock size={13} /> {verifyingChain ? 'Verifying SHA-256…' : 'Verify Chain Now'}
                 </button>
               </div>
             );
@@ -862,10 +890,10 @@ export default function ProjectCockpit({ projectKey }) {
                 </div>
                 <div className="pill-row">
                   <button type="button" className="btn btn-primary btn-sm" onClick={handleDownloadAuditPack}>
-                    ⬇ Export (.md)
+                    <IconDownload size={13} /> Export (.md)
                   </button>
                   <button type="button" className="btn btn-sm" onClick={handleDownloadJsonAuditPack}>
-                    ⬇ Evidence (.json)
+                    <IconDownload size={13} /> Evidence (.json)
                   </button>
                 </div>
               </div>
@@ -994,7 +1022,7 @@ export default function ProjectCockpit({ projectKey }) {
                 <li><strong>dhf-audit-check</strong> — Runs 5-pillar ISO 13485 DHF audits &amp; verifies SHA-256 21 CFR Part 11 audit chains</li>
               </ul>
               <button type="button" className="btn btn-rovo" onClick={() => handleOpenRovo()}>
-                ✦ Open MedTrace QMS Copilot
+                <IconSparkle size={14} /> Open MedTrace QMS Copilot
               </button>
             </div>
 
@@ -1047,47 +1075,57 @@ export default function ProjectCockpit({ projectKey }) {
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">Live Teamwork Graph Telemetry</h2>
-                <span className={`badge ${data.twg?.connected ? 'badge-ok' : 'badge-warn'}`}>
-                  {data.twg?.connected ? 'Connected' : 'Check Scopes'}
-                </span>
+                <div className="pill-row">
+                  {data.twg?.snapshotUsed && (
+                    <span className="badge badge-brand">KVS Snapshot Hydrated</span>
+                  )}
+                  <span className={`badge ${data.twg?.connected ? 'badge-ok' : 'badge-warn'}`}>
+                    {data.twg?.connected ? 'Connected' : 'Check Scopes'}
+                  </span>
+                </div>
               </div>
               <div className="kpi-sub" style={{ marginBottom: 10 }}>
-                Echo: <span className="mono">{data.twg?.echo || 'Pending'}</span>
+                Echo: <span className="mono">{data.twg?.echo || 'Pending'}</span> · Resolved: <strong>{s.twgTeamsCount} Teams · {s.twgSopCount} SOPs · {s.twgGoalsCount} Goals</strong>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {(data.twg?.telemetry || []).map((t) => (
-                  <div
-                    key={t.queryName}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '6px 10px',
-                      borderRadius: 6,
-                      background: 'var(--bg)',
-                      border: '1px solid var(--border)',
-                      fontSize: 12,
-                    }}
-                  >
-                    <span className="mono">{t.queryName}</span>
-                    <span>
-                      <span className={`badge ${t.ok ? 'badge-ok' : 'badge-warn'}`}>{t.ok ? 'OK' : 'WARN'}</span>{' '}
-                      <span className="kpi-sub">{t.durationMs}ms</span>
-                    </span>
-                  </div>
-                ))}
+                {(data.twg?.telemetry || []).map((t) => {
+                  const hydrated = !t.ok && data.twg?.snapshotUsed;
+                  return (
+                    <div
+                      key={t.queryName}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        fontSize: 12,
+                      }}
+                    >
+                      <span className="mono">{t.queryName}</span>
+                      <span>
+                        <span className={`badge ${t.ok ? 'badge-ok' : hydrated ? 'badge-brand' : 'badge-warn'}`}>
+                          {t.ok ? 'LIVE OK' : hydrated ? 'CACHED OK' : 'WARN'}
+                        </span>{' '}
+                        <span className="kpi-sub">{t.durationMs}ms</span>
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             <div className="card">
               <div className="card-header">
                 <h2 className="card-title">1-Click MedTech Judge Demo Seeder</h2>
-                <span className="badge badge-ok">Idempotent</span>
+                <span className="badge badge-ok">Balanced Portfolio</span>
               </div>
               <p className="kpi-sub" style={{ marginTop: 0 }}>
-                Evaluating MedTrace IQ on a fresh Jira site? Seed 6 realistic cardiac pacemaker, infusion pump, ICU ventilator, ablation catheter, CGM, and AED CAPA work items into <strong>{data.project.key}</strong> in one click.
+                Evaluating MedTrace IQ on a fresh Jira site? Seed 6 realistic cardiac pacemaker, infusion pump, ICU ventilator, ablation catheter, CGM, and AED CAPA work items into <strong>{data.project.key}</strong> with realistic Ship Ready, Conditional, and Regulatory Hold states in one click.
               </p>
               <button type="button" className="btn btn-primary" onClick={handleSeedDemo} disabled={busy}>
-                {busy ? 'Seeding MedTech Issues…' : `⚡ Seed 6 MedTech Issues into ${data.project.key}`}
+                <IconBolt size={14} /> {busy ? 'Seeding MedTech Issues…' : `Seed / Calibrate Demo in ${data.project.key}`}
               </button>
             </div>
           </div>

@@ -9,7 +9,7 @@ const SUBSYSTEM_CATALOG = [
     label: 'Infusion Pump',
     fdaKeyword: 'infusion pump',
     deviceClass: 'Class II / High-Alert',
-    patterns: [/infusion/i, /\bpump\b/i, /occlusion/i, /\bbolus\b/i, /syringe pump/i],
+    patterns: [/infusion/i, /syringe\s*pump/i, /insulin\s*pump/i, /\biv\s*pump\b/i, /occlusion/i, /\bbolus\b/i],
   },
   {
     id: 'pacemaker',
@@ -60,7 +60,150 @@ const SUBSYSTEM_CATALOG = [
     deviceClass: 'Class II-III / Surgical',
     patterns: [/surgical/i, /endoscop/i, /robotic arm/i, /laparoscop/i, /scalpel/i],
   },
+  {
+    id: 'dialysis',
+    label: 'Hemodialysis / Dialysis System',
+    fdaKeyword: 'dialysis',
+    deviceClass: 'Class II-III / Life-Supporting',
+    patterns: [/dialysis/i, /hemodialysis/i, /dialyzer/i, /ultrafiltration/i, /renal/i],
+  },
+  {
+    id: 'anesthesia',
+    label: 'Anesthesia Workstation',
+    fdaKeyword: 'anesthesia',
+    deviceClass: 'Class II-III / Life-Supporting',
+    patterns: [/anesthesia/i, /vaporizer/i, /capnograph/i, /breathing circuit/i],
+  },
+  {
+    id: 'patient-monitor',
+    label: 'Patient Monitor / Pulse Oximeter',
+    fdaKeyword: 'oximeter',
+    deviceClass: 'Class II / Monitoring',
+    patterns: [/oximeter/i, /\bspo2\b/i, /patient monitor/i, /blood pressure/i, /telemetry monitor/i],
+  },
+  {
+    id: 'neurostimulator',
+    label: 'Neurostimulator / Cochlear Implant',
+    fdaKeyword: 'stimulator',
+    deviceClass: 'Class III / Implantable',
+    patterns: [/neurostimulat/i, /cochlear/i, /deep brain/i, /spinal cord stim/i, /\bdbs\b/i],
+  },
+  {
+    id: 'orthopedic-implant',
+    label: 'Orthopedic / Spinal Implant',
+    fdaKeyword: 'implant',
+    deviceClass: 'Class II-III / Implantable',
+    patterns: [/orthopedic/i, /prosthe/i, /arthroplasty/i, /bone screw/i, /spinal implant/i, /hip implant/i],
+  },
+  {
+    id: 'ivd-diagnostics',
+    label: 'IVD / Molecular Diagnostics',
+    fdaKeyword: 'assay',
+    deviceClass: 'Class II / Diagnostic',
+    patterns: [/\bivd\b/i, /in vitro/i, /\bpcr\b/i, /reagent/i, /assay/i, /hematology/i, /analyzer/i],
+  },
+  {
+    id: 'sterilizer',
+    label: 'Sterilizer / Autoclave',
+    fdaKeyword: 'sterilizer',
+    deviceClass: 'Class II / Infection Control',
+    patterns: [/steriliz/i, /autoclave/i, /reprocess/i, /disinfect/i],
+  },
+  {
+    id: 'ophthalmic-laser',
+    label: 'Ophthalmic / Surgical Laser',
+    fdaKeyword: 'laser',
+    deviceClass: 'Class II-III / Ophthalmic',
+    patterns: [/ophthalmic/i, /intraocular/i, /\blasik\b/i, /surgical laser/i, /retinal/i],
+  },
 ];
+
+const FAILURE_MODE_TOKENS = [
+  'occlusion',
+  'bolus',
+  'alarm',
+  'battery',
+  'thermal',
+  'overheat',
+  'cybersecurity',
+  'bluetooth',
+  'telemetry',
+  'firmware',
+  'software',
+  'valve',
+  'watchdog',
+  'pressure',
+  'coating',
+  'particulate',
+  'lumen',
+  'sensor',
+  'drift',
+  'calibration',
+  'hypoglycemia',
+  'leak',
+  'power',
+  'shock',
+  'sterile',
+  'sterility',
+  'crack',
+  'fracture',
+  'disconnect',
+  'timeout',
+  'dose',
+  'delivery',
+  'stall',
+  'delay',
+  'false',
+  'fuse',
+  'lead',
+  'encryption',
+];
+
+/**
+ * Semantic FDA 21 CFR 820.30 / ISO 14971 / IEC 62304 Design Control Rubric Analyzer.
+ * Prevents naive character-count gaming by verifying concrete regulatory artifacts in the issue specification.
+ */
+export function analyzeDesignControls(issue) {
+  const combined = `${issue.summary || ''} ${issue.description || ''} ${(issue.labels || []).join(' ')}`;
+
+  const checks = [
+    {
+      id: 'regulatory_standard',
+      label: 'Regulatory Standard Cited (FDA 21 CFR / ISO / IEC)',
+      weight: 4,
+      passed: /\b(21\s*cfr|iso\s*13485|iso\s*14971|iso\s*10993|iec\s*60601|iec\s*62304|fda|mdr|clsi|astm|ul\s*2900)\b/i.test(combined),
+    },
+    {
+      id: 'quantitative_criteria',
+      label: 'Quantitative Acceptance Criteria / Tolerance Specified',
+      weight: 4,
+      passed: /(\b\d+(\.\d+)?\s*(ms|sec|seconds?|s\b|min|mmhg|ml|mg|%|°c|v\b|ma\b|hz|khz|mhz)|\b(threshold|tolerance|margin|sensitivity|latency|accuracy|limit|cutoff|range)\b)/i.test(combined),
+    },
+    {
+      id: 'hazard_control',
+      label: 'Hazard / Failure-Mode Mitigation Controls Defined',
+      weight: 4,
+      passed: /\b(hazard|fmea|mitigat|failsafe|fail-safe|watchdog|alarm|occlusion|cybersecurity|cryptograph|biocompat|thermal|containment|root\s*cause|capa|safety|risk)\b/i.test(combined),
+    },
+    {
+      id: 'traceable_reference',
+      label: 'Traceable Protocol / SOP / Verification Reference',
+      weight: 3,
+      passed: /\b(sop-[a-z0-9-]+|cer-[a-z0-9-]+|dhf|verification|validation|bench\s*test|protocol|v&v|clinical\s*eval|audit|process\s*validation)\b/i.test(combined),
+    },
+  ];
+
+  const score = checks.reduce((acc, c) => acc + (c.passed ? c.weight : 0), 0);
+  const passedCount = checks.filter((c) => c.passed).length;
+
+  return {
+    score,
+    max: 15,
+    passedCount,
+    totalCount: checks.length,
+    checks,
+  };
+}
 
 export function detectDeviceSubsystem(issue) {
   const haystack = [
@@ -94,6 +237,8 @@ export function detectDeviceSubsystem(issue) {
 export function matchRecallsForIssue(issue, subsystem, allRecalls = []) {
   const kw = (subsystem?.fdaKeyword || '').toLowerCase();
   const tokens = kw.split(/\s+/).filter((t) => t.length >= 3);
+  const issueText = `${issue.summary || ''} ${issue.description || ''} ${(issue.labels || []).join(' ')}`.toLowerCase();
+  const issueFailureTokens = FAILURE_MODE_TOKENS.filter((tok) => issueText.includes(tok));
 
   const scored = [];
   for (const r of allRecalls) {
@@ -104,7 +249,14 @@ export function matchRecallsForIssue(issue, subsystem, allRecalls = []) {
       if (text.includes(tok)) relevance += 3;
     }
     if (relevance > 0) {
-      scored.push({ ...r, relevance });
+      const failureModeMatches = issueFailureTokens.filter((ft) => text.includes(ft));
+      relevance += failureModeMatches.length * 4;
+      scored.push({
+        ...r,
+        relevance,
+        failureModeMatches,
+        matchStrength: failureModeMatches.length > 0 ? 'DIRECT_FAILURE_MODE' : 'SUBSYSTEM_PARALLEL',
+      });
     }
   }
 
@@ -113,6 +265,9 @@ export function matchRecallsForIssue(issue, subsystem, allRecalls = []) {
       const clsRank = { 'Class I': 0, 'Class II': 1, 'Class III': 2 };
       const cDiff = (clsRank[a.classification] ?? 3) - (clsRank[b.classification] ?? 3);
       if (cDiff !== 0) return cDiff;
+      if (b.failureModeMatches.length !== a.failureModeMatches.length) {
+        return b.failureModeMatches.length - a.failureModeMatches.length;
+      }
       return b.relevance - a.relevance;
     })
     .slice(0, 5);
@@ -166,17 +321,16 @@ export function evaluateIssueCompliance({
   const blockingGaps = [];
   const positiveSignals = [];
 
-  // Pillar 1: Design Control Completeness (25 pts)
-  let p1 = 0;
-  const descLen = (issue.description || '').trim().length;
-  if (descLen >= 100) {
-    p1 += 15;
-    positiveSignals.push('Detailed design control specification documented');
-  } else if (descLen >= 30) {
-    p1 += 8;
-    blockingGaps.push('Expand design specification to document acceptance criteria & hazard controls');
+  // Pillar 1: Design Control Completeness (25 pts) — Real Semantic FDA 21 CFR 820.30 Rubric
+  const designControlRubric = analyzeDesignControls(issue);
+  let p1 = designControlRubric.score;
+  if (designControlRubric.passedCount === designControlRubric.totalCount) {
+    positiveSignals.push('All 4 FDA 21 CFR 820.30 design control specification elements verified');
   } else {
-    blockingGaps.push('Missing FDA 21 CFR 820.30 design specification description');
+    const missingChecks = designControlRubric.checks.filter((c) => !c.passed);
+    if (missingChecks.length > 0) {
+      blockingGaps.push(`Design control spec missing: ${missingChecks[0].label}`);
+    }
   }
   if (subsystem.matchedDirectly || (issue.labels && issue.labels.length > 0)) {
     p1 += 10;
@@ -308,6 +462,8 @@ export function evaluateIssueCompliance({
         ? 'High'
         : 'Moderate';
 
+  const directFailureModeCount = matchedRecalls.filter((r) => r.matchStrength === 'DIRECT_FAILURE_MODE').length;
+
   return {
     issueKey: issue.key,
     issueId: issue.id,
@@ -320,6 +476,7 @@ export function evaluateIssueCompliance({
     riskTier,
     score,
     verdict,
+    designControlRubric,
     pillars: {
       designControl: { score: p1, max: 25 },
       verificationValidation: { score: p2, max: 25 },
@@ -329,6 +486,7 @@ export function evaluateIssueCompliance({
     },
     classICount,
     classIICount,
+    directFailureModeCount,
     matchedRecalls,
     matchedSops,
     checklist,

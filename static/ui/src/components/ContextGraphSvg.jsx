@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { openExternalUrl } from '../utils/bridge';
 import { fdaClassBadge, verdictBadge } from './ScoreGauge';
+import { IconExternalLink, IconFileText, IconPlus } from './Icons';
 
 const NODE_COLORS = {
   fda: { fill: '#c9372c', stroke: '#87241c', tag: 'openFDA' },
@@ -243,6 +244,18 @@ export default function ContextGraphSvg({ graph = { nodes: [], edges: [] }, onCr
                   }
                 }}
               >
+                {node.type === 'fda' && node.meta?.classification === 'Class I' && (
+                  <rect
+                    x="-3"
+                    y="-3"
+                    width={BOX_W + 6}
+                    height={BOX_H + 6}
+                    rx="11"
+                    fill="none"
+                    stroke="#c9372c"
+                    className="svg-pulse-ring"
+                  />
+                )}
                 <rect
                   width={BOX_W}
                   height={BOX_H}
@@ -316,8 +329,9 @@ export default function ContextGraphSvg({ graph = { nodes: [], edges: [] }, onCr
                   <div style={{ padding: 9, borderRadius: 8, background: 'var(--brand-soft)', fontSize: 12 }}>
                     <strong>Linked Confluence SOPs (via Teamwork Graph):</strong>
                     {selectedNode.meta.matchedSops.map((sop) => (
-                      <div key={sop.id} style={{ marginTop: 4 }}>
-                        📄 <strong>{sop.title}</strong> · Owner: {sop.ownerName}
+                      <div key={sop.id} className="inline-flex-row" style={{ marginTop: 4 }}>
+                        <IconFileText size={13} />
+                        <span><strong>{sop.title}</strong> · Owner: {sop.ownerName}</span>
                       </div>
                     ))}
                   </div>
@@ -389,7 +403,7 @@ export default function ContextGraphSvg({ graph = { nodes: [], edges: [] }, onCr
                       className="btn btn-sm"
                       onClick={() => openExternalUrl(selectedNode.meta.fdaUrl)}
                     >
-                      Open FDA Record ↗
+                      Open FDA Record <IconExternalLink size={12} />
                     </button>
                   )}
                 </div>
@@ -418,7 +432,7 @@ export default function ContextGraphSvg({ graph = { nodes: [], edges: [] }, onCr
                       openExternalUrl(selectedNode.meta.webUrl || selectedNode.meta.profileUrl || selectedNode.meta.url)
                     }
                   >
-                    Open in Atlassian ↗
+                    Open in Atlassian <IconExternalLink size={12} />
                   </button>
                 )}
               </>

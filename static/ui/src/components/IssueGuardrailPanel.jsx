@@ -2,6 +2,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { callBackend, openExternalUrl, openMedTraceRovo } from '../utils/bridge';
 import ScoreGauge, { fdaClassBadge, verdictBadge } from './ScoreGauge';
 import { CapaModal, SignOffModal } from './CapaModal';
+import {
+  IconCheckCircle,
+  IconExternalLink,
+  IconFileText,
+  IconGitBranch,
+  IconLock,
+  IconPlus,
+  IconRefresh,
+  IconSparkle,
+  IconTarget,
+  IconXCircle,
+} from './Icons';
 
 export default function IssueGuardrailPanel({ issueKey }) {
   const [data, setData] = useState(null);
@@ -142,8 +154,9 @@ export default function IssueGuardrailPanel({ issueKey }) {
                   : 'No formal QA regulatory sign-off recorded yet'}
               </div>
               {ev.signOff?.entryHash && (
-                <div className="mono kpi-sub" style={{ fontSize: 11, marginTop: 2 }}>
-                  🔐 21 CFR Part 11 SHA-256: {ev.signOff.entryHash.slice(0, 24)}…
+                <div className="mono kpi-sub inline-flex-row" style={{ fontSize: 11, marginTop: 2 }}>
+                  <IconLock size={12} />
+                  <span>21 CFR Part 11 SHA-256: {ev.signOff.entryHash.slice(0, 24)}…</span>
                 </div>
               )}
             </div>
@@ -151,10 +164,10 @@ export default function IssueGuardrailPanel({ issueKey }) {
 
           <div className="pill-row">
             <button type="button" className="btn btn-rovo btn-sm" onClick={handleLaunchRovo}>
-              ✦ Ask MedTrace Rovo
+              <IconSparkle size={13} /> Ask MedTrace Rovo
             </button>
             <button type="button" className="btn btn-primary btn-sm" onClick={() => setSignOffOpen(true)}>
-              QA Sign-Off
+              <IconLock size={13} /> QA Sign-Off
             </button>
             <button
               type="button"
@@ -170,10 +183,10 @@ export default function IssueGuardrailPanel({ issueKey }) {
                 setCapaOpen(true);
               }}
             >
-              + Create CAPA
+              <IconPlus size={13} /> Create CAPA
             </button>
             <button type="button" className="btn btn-sm" onClick={loadData} disabled={loading}>
-              ↻ Refresh
+              <IconRefresh size={13} /> Refresh
             </button>
           </div>
         </div>
@@ -249,9 +262,14 @@ export default function IssueGuardrailPanel({ issueKey }) {
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Auto-Matched Confluence SOPs (Subsystem Match):</div>
               {ev.matchedSops.map((pg) => (
                 <div key={pg.id} style={{ fontSize: 12, marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 6, background: 'var(--bg)', border: '1px solid var(--border)' }}>
-                  <span>📄 <strong>{pg.title}</strong> <span style={{ color: 'var(--text-muted)' }}>({pg.ownerName})</span></span>
+                  <span className="inline-flex-row">
+                    <IconFileText size={13} />
+                    <span><strong>{pg.title}</strong> <span style={{ color: 'var(--text-muted)' }}>({pg.ownerName})</span></span>
+                  </span>
                   {pg.webUrl && (
-                    <button type="button" className="btn btn-sm" onClick={() => openExternalUrl(pg.webUrl)}>Open ↗</button>
+                    <button type="button" className="btn btn-sm" onClick={() => openExternalUrl(pg.webUrl)}>
+                      Open <IconExternalLink size={12} />
+                    </button>
                   )}
                 </div>
               ))}
@@ -263,9 +281,14 @@ export default function IssueGuardrailPanel({ issueKey }) {
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Connected Confluence Documents (TWG):</div>
               {twg.confluencePages.slice(0, 3).map((pg) => (
                 <div key={pg.id} style={{ fontSize: 12, marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 6 }}>
-                  <span>📄 {pg.title} <span style={{ color: 'var(--text-muted)' }}>({pg.ownerName})</span></span>
+                  <span className="inline-flex-row">
+                    <IconFileText size={13} />
+                    <span>{pg.title} <span style={{ color: 'var(--text-muted)' }}>({pg.ownerName})</span></span>
+                  </span>
                   {pg.webUrl && (
-                    <button type="button" className="btn btn-sm" onClick={() => openExternalUrl(pg.webUrl)}>Open</button>
+                    <button type="button" className="btn btn-sm" onClick={() => openExternalUrl(pg.webUrl)}>
+                      Open <IconExternalLink size={12} />
+                    </button>
                   )}
                 </div>
               ))}
@@ -276,7 +299,10 @@ export default function IssueGuardrailPanel({ issueKey }) {
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Aligned Atlassian Goals:</div>
               {twg.goals.slice(0, 3).map((g) => (
-                <div key={g.id} style={{ fontSize: 12 }}>🎯 {g.name} ({g.key || 'Goal'})</div>
+                <div key={g.id} className="inline-flex-row" style={{ fontSize: 12, marginBottom: 3 }}>
+                  <IconTarget size={13} />
+                  <span>{g.name} ({g.key || 'Goal'})</span>
+                </div>
               ))}
             </div>
           )}
@@ -285,7 +311,10 @@ export default function IssueGuardrailPanel({ issueKey }) {
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Linked Development Artifacts:</div>
               {twg.devArtifacts.slice(0, 3).map((a) => (
-                <div key={a.id} style={{ fontSize: 12 }}>🔀 {a.displayName} — {a.status}</div>
+                <div key={a.id} className="inline-flex-row" style={{ fontSize: 12, marginBottom: 3 }}>
+                  <IconGitBranch size={13} />
+                  <span>{a.displayName} — {a.status}</span>
+                </div>
               ))}
             </div>
           )}
@@ -327,6 +356,11 @@ export default function IssueGuardrailPanel({ issueKey }) {
                     {fdaClassBadge(r.classification)}
                     <strong className="mono">{r.recallNumber}</strong>
                     <span className="badge badge-neutral">{r.status}</span>
+                    {r.matchStrength === 'DIRECT_FAILURE_MODE' && (
+                      <span className="badge badge-danger">
+                        Failure Overlap: {(r.failureModeMatches || []).slice(0, 2).join(', ')}
+                      </span>
+                    )}
                   </div>
                   <div className="pill-row">
                     <button
@@ -343,10 +377,10 @@ export default function IssueGuardrailPanel({ issueKey }) {
                         setCapaOpen(true);
                       }}
                     >
-                      + CAPA from Recall
+                      <IconPlus size={12} /> CAPA from Recall
                     </button>
                     <button type="button" className="btn btn-sm" onClick={() => openExternalUrl(r.fdaUrl)}>
-                      FDA ↗
+                      FDA <IconExternalLink size={12} />
                     </button>
                   </div>
                 </div>

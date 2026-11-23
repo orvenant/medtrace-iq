@@ -36,11 +36,12 @@ Every QA Regulatory Sign-Off and Autonomous FDA Alert is cryptographically linke
 ### 4. Executive Release Readiness Dashboard Gadget (`jira:dashboardGadget`)
 Drop **MedTrace IQ Executive Release Readiness** onto any Jira Dashboard for VP QA / Executive leadership visibility—featuring live project selector configuration, radial Ship-Confidence gauge, Ready/Conditional/Hold counts, Class I exposure badge, and 21 CFR Part 11 SHA-256 integrity status.
 
-### 5. Interactive Release Cockpit, 3×3 Risk Heatmap & Slide-Over Audit Drawer (`jira:projectPage`)
+### 5. Interactive Release Cockpit, 3×3 Risk Heatmap & Per-Gate What-If Simulator (`jira:projectPage`)
 - **ISO 14971 Risk × Release Verdict Matrix:** Interactive 3×3 executive heatmap (`Critical / High / Moderate` × `HOLD / CONDITIONAL / SHIP READY`) that cross-filters the release gate table on click.
-- **5-Pillar FDA 21 CFR 820 Coverage Analytics:** Live project-wide maturity bars across Design Controls, V&V / ISO 14971, SOP & Teamwork Graph Context, openFDA Clearance, and QA Sign-Off.
-- **Native `<dialog>` Slide-Over Issue Audit Drawer + What-If Simulator:** Inspect any issue directly from the cockpit, toggle live ISO 13485 gate checklists persisted to Forge KVS, view auto-matched Teamwork Graph Confluence SOPs and live openFDA recalls, and preview projected Ship-Confidence score gains with the **What-If Release Gate Simulator**.
-- **Zero-Overlap 4-Column Blast-Radius & Teamwork Graph Topology:** Visualizes `Live openFDA Recalls` → `Jira Design Controls & CAPAs` → `TWG Confluence SOPs` → `TWG Teams & Goals` with semantic `TWG_GOVERNS_SOP` edges and click-to-inspect provenance.
+- **Real Semantic FDA 21 CFR 820.30 Rubric & 16 Regulated Device Subsystems:** Classifies 16 clinical device categories (Infusion Pump, Pacemaker, Ventilator, Catheter, CGM, Defibrillator, Imaging, Surgical Robotics, Dialysis, Anesthesia, Pulse Oximeter, Neurostimulator, Orthopedic Implant, IVD Diagnostics, Sterilizer, Ophthalmic Laser), verifies 4 explicit 820.30 specification criteria (standard citation, quantitative tolerances, hazard controls, protocol references — never gamed by filler text), and scores **Direct Failure-Mode Overlap** against live openFDA recalls.
+- **Native `<dialog>` Slide-Over Issue Audit Drawer + Interactive Per-Gate What-If Simulator:** Inspect any issue directly from the cockpit, toggle individual open controls (`+15 V&V`, `+6 ISO 14971`, `+10 SOP Owner`, `+18 openFDA Clear`, `+10 QA Approval`) to simulate exact score deltas and release verdict transitions, view auto-matched Teamwork Graph Confluence SOPs and live openFDA recalls, and persist live ISO 13485 gate checklists to Forge KVS.
+- **Zero-Overlap 4-Column Blast-Radius & Teamwork Graph Topology:** Visualizes `Live openFDA Recalls` (with animated pulse alerts on active Class I signals) → `Jira Design Controls & CAPAs` → `TWG Confluence SOPs` → `TWG Teams & Goals` with semantic `TWG_GOVERNS_SOP` edges and click-to-inspect provenance.
+- **Balanced 1-Click Judge Demo Seeder:** Populates realistic `Ship Ready`, `Conditional`, and `Regulatory Hold` regulated MedTech work items in seconds so evaluators immediately experience full Green/Amber/Red executive gating.
 
 ### 6. Contextual Jira Issue Guardrail (`jira:issuePanel`)
 Lives directly inside every Jira ticket: displays radial Ship-Confidence gauge, 5-pillar bars, interactive ISO 13485 checklist, auto-matched Teamwork Graph Confluence SOP cards, matched openFDA recalls, 21 CFR Part 11 SHA-256 sign-off digest, 1-click Linked CAPA creation, and 1-click launch of **MedTrace QMS Copilot** via `@forge/bridge` `rovo.open()`.
@@ -91,7 +92,7 @@ flowchart LR
 npm install
 cd static/ui && npm install && npm run build && cd ../..
 
-# 2. Run unit tests (8/8 covering scoring, SOP matching, analytics, and SHA-256 tamper detection)
+# 2. Run unit tests (11/11 covering 16 subsystems, 820.30 anti-gaming rubric, failure-mode matching, SOP linking, analytics, and SHA-256 tamper detection)
 npm test
 
 # 3. Validate Forge manifest, Rovo skills, MCP server, triggers, validator & scopes
