@@ -12,11 +12,18 @@ const SUBSYSTEM_CATALOG = [
     patterns: [/infusion/i, /syringe\s*pump/i, /insulin\s*pump/i, /\biv\s*pump\b/i, /occlusion/i, /\bbolus\b/i],
   },
   {
+    id: 'catheter',
+    label: 'Vascular / Ablation Catheter',
+    fdaKeyword: 'catheter',
+    deviceClass: 'Class II-III / Invasive',
+    patterns: [/catheter/i, /ablation/i, /lumen/i, /stent/i, /vascular/i, /guidewire/i],
+  },
+  {
     id: 'pacemaker',
     label: 'Cardiac Pacemaker / ICD',
     fdaKeyword: 'pacemaker',
     deviceClass: 'Class III / Life-Sustaining',
-    patterns: [/pacemaker/i, /cardiac/i, /\bicd\b/i, /arrhythmia/i, /leadless/i],
+    patterns: [/pacemaker/i, /\bicd\b/i, /arrhythmia/i, /leadless/i, /cardiac\s+(rhythm|pacing|implant)/i],
   },
   {
     id: 'ventilator',
@@ -24,13 +31,6 @@ const SUBSYSTEM_CATALOG = [
     fdaKeyword: 'ventilator',
     deviceClass: 'Class III / Life-Sustaining',
     patterns: [/ventilator/i, /respirat/i, /expiratory/i, /airway/i, /cpap|bipap/i],
-  },
-  {
-    id: 'catheter',
-    label: 'Vascular / Ablation Catheter',
-    fdaKeyword: 'catheter',
-    deviceClass: 'Class II-III / Invasive',
-    patterns: [/catheter/i, /ablation/i, /lumen/i, /stent/i, /vascular/i, /guidewire/i],
   },
   {
     id: 'glucose-sensor',

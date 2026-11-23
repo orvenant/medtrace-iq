@@ -169,7 +169,7 @@ export async function markTriggerAlerted(issueKey, recallNumber) {
 
 export async function isDemoPortfolioCalibrated(projectKey) {
   try {
-    return Boolean(await kvs.get(safeKey('democal', projectKey)));
+    return Boolean(await kvs.get(safeKey('democal_v2', projectKey)));
   } catch {
     return false;
   }
@@ -177,7 +177,7 @@ export async function isDemoPortfolioCalibrated(projectKey) {
 
 export async function markDemoPortfolioCalibrated(projectKey) {
   try {
-    await kvs.set(safeKey('democal', projectKey), { calibratedAt: new Date().toISOString() });
+    await kvs.set(safeKey('democal_v2', projectKey), { calibratedAt: new Date().toISOString() });
   } catch (err) {
     console.warn('[storage] markDemoPortfolioCalibrated warning:', err?.message);
   }

@@ -311,6 +311,13 @@ test('expanded 16-device catalog detects dialysis, anesthesia, oximeter, neurost
   assert.equal(detectDeviceSubsystem({ summary: 'Molecular PCR IVD assay reagent lot' }).id, 'ivd-diagnostics');
   assert.equal(detectDeviceSubsystem({ summary: 'Steam autoclave sterilizer cycle temp' }).id, 'sterilizer');
   assert.equal(detectDeviceSubsystem({ summary: 'Ophthalmic retinal laser calibration' }).id, 'ophthalmic-laser');
+  assert.equal(
+    detectDeviceSubsystem({
+      summary: 'Steerable Ablation Catheter Hydrophilic Tip Coating',
+      description: 'Manufacturing process transfer for steerable cardiac ablation catheter.',
+    }).id,
+    'catheter'
+  );
 });
 
 test('matchRecallsForIssue prioritizes DIRECT_FAILURE_MODE overlaps over generic category parallels', () => {

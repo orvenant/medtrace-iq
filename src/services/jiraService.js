@@ -342,7 +342,7 @@ const MEDTECH_DEMO_BLUEPRINTS = [
   {
     summary: 'Continuous Glucose Monitor (CGM) Sensor Drift Compensation Algorithm',
     description:
-      'SaMD algorithm update calibrating enzymatic glucose sensor interstitial lag during rapid glycemic decline. Improves hypoglycemia alert sensitivity by 14% across clinical validation dataset. Linked to Clinical Evaluation Report CER-2026-08.',
+      'SaMD algorithm update calibrating enzymatic glucose sensor interstitial lag during rapid glycemic decline under FDA 21 CFR 820.30 and ISO 14971 hazard mitigation controls. Improves hypoglycemia alarm sensitivity by 14% across clinical validation dataset. Linked to Clinical Evaluation Report CER-2026-08 and verification protocol SOP-QMS-104.',
     labels: ['medtrace-demo', 'glucose-sensor', 'cgm', 'samd', 'clinical-eval'],
   },
   {

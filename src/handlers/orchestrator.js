@@ -335,7 +335,12 @@ async function hydrateDemoPortfolioStates({ projectKey, issues, user }) {
     );
 
     if (sub.id === 'glucose-sensor' || sub.id === 'catheter') {
-      if (!alreadyCustomized) {
+      if (
+        !existingChecklist.designVerification ||
+        !existingChecklist.iso14971RiskReview ||
+        !existingChecklist.sopOwnerVerified ||
+        !existingChecklist.fdaRecallReviewed
+      ) {
         await saveIssueChecklist(
           iss.key,
           {
@@ -348,7 +353,7 @@ async function hydrateDemoPortfolioStates({ projectKey, issues, user }) {
         );
         hydratedCount += 1;
       }
-      if (!existingSignOff) {
+      if (existingSignOff?.decision !== 'Approved') {
         await recordSignOffEntry({
           projectKey,
           issueKey: iss.key,
