@@ -24,7 +24,7 @@ modules:
         Executive FDA 21 CFR 820 / ISO 13485 Ship-Confidence score, live openFDA
         Class I alerts, Teamwork Graph context, and 21 CFR Part 11 SHA-256 audit
         chain status.
-      thumbnail: https://raw.githubusercontent.com/vizral/medtrace-iq/main/static/icons/medtrace-icon.svg
+      thumbnail: https://raw.githubusercontent.com/orvenant/medtrace-iq/main/static/icons/medtrace-icon.svg
       resource: ui-dist
       resolver:
         function: ui-resolver

@@ -9,10 +9,10 @@
   3. Best apps with Teamwork Graph integration (`requestTeamworkGraph` 11 Curated Queries)
   4. Best Marketplace published app (Atlassian Marketplace Free Listing)
 - **Built With:** Atlassian Forge (`nodejs24.x`), Forge Triggers (`avi:jira:created:issue` / `updated:issue`), Jira Workflow Validator (`jira:workflowValidator`), Jira Dashboard Gadget (`jira:dashboardGadget`), Atlassian Teamwork Graph API, Atlassian Rovo Agent & Skills, Atlassian Rovo MCP, Forge Storage (`@forge/kvs`), Node Crypto SHA-256 (`21 CFR Part 11`), Jira Cloud REST API v3, React 18, Vite, US openFDA Medical Device Enforcement API
-- **GitHub Repository:** `https://github.com/vizral/medtrace-iq`
+- **GitHub Repository:** `https://github.com/orvenant/medtrace-iq`
 - **Judge Installation Link (Atlassian Forge Production):** `https://developer.atlassian.com/console/install/f6caf1a8-53e4-49e6-8e26-f98807c8151c?signature=AYABeFNvIQsLhA7%2FZirSVA51cR0AAAADAAdhd3Mta21zAEthcm46YXdzOmttczp1cy13ZXN0LTI6NzA5NTg3ODM1MjQzOmtleS83MDVlZDY3MC1mNTdjLTQxYjUtOWY5Yi1lM2YyZGNjMTQ2ZTcAuAECAQB4CxqLTo9l4lqXuFjNim1xJM%2Bp%2F3TVP9xHS2BrU5DRRucBvocmitTesR%2BUvG4QHlequQAAAH4wfAYJKoZIhvcNAQcGoG8wbQIBADBoBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDEGlSNS8sKTAZAeFuwIBEIA7RDvCG1bsZAsGbrUdbNL5iKW5rsvVHg0QnoKqbuu4edsgJ2DAUDd%2FEHQTTwWIhQDpxnOgd4UgkbWiObAAB2F3cy1rbXMAS2Fybjphd3M6a21zOmV1LXdlc3QtMTo3MDk1ODc4MzUyNDM6a2V5LzQ2MzBjZTZiLTAwYzMtNGRlMi04NzdiLTYyN2UyMDYwZTVjYwC4AQICAHi9bVMAkme4qVQX1fQHo6ePw3H40A7cGfz7yrmSfBWMXgHgUn3nFM7rEqT66K%2F81rMrAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMPsonb1uq5e9rUMQ4AgEQgDuokRhFoQn5FKSwcpiPJYplDgI%2Bnom3St%2BH7PSciJ7j3M6fsLr6i3M9ztY6%2BOzRbhDhdDt5ytT7fAfHNgAHYXdzLWttcwBLYXJuOmF3czprbXM6dXMtZWFzdC0xOjcwOTU4NzgzNTI0MzprZXkvNmMxMjBiYTAtNGNkNS00OTg1LWI4MmUtNDBhMDQ5NTJjYzU3ALgBAgIAeDYASx0XCjkny4iLV6vz%2BKtEGSGT6kdt0QRpkn6D%2FlVEAdmgHFwDf2D6FkdNNKrscAsAAAB%2BMHwGCSqGSIb3DQEHBqBvMG0CAQAwaAYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAzFkzO4n34BTBU7uKwCARCAO4yFh98eVCDK4mxHqFUKcOwQzKIn19wHudGtd5%2FvwKPkncQwZYDuVi2x1nlZbGndrbUaNgl8ggRYyBdMAgAAAAAMAAAQAAAAAAAAAAAAAAAAABqCr91KV%2BtjYv2PpkxSdCT%2F%2F%2F%2F%2FAAAAAQAAAAAAAAAAAAAAAQAAADIprq5BjAnwbRM7FkjoQ4Vwa2ltDTON9v%2BEKfpbGgpX3xTZjoFPzm%2FmoJsexX41cw7p6hIpulWRjpF5hfbpuDLW6CI%3D&product=jira`
-- **Privacy Policy:** `https://github.com/vizral/medtrace-iq/blob/main/PRIVACY.md`
-- **Third-Party Agent Skill (`SKILL.md`):** `https://github.com/vizral/medtrace-iq/blob/main/SKILL.md`
+- **Privacy Policy:** `https://github.com/orvenant/medtrace-iq/blob/main/PRIVACY.md`
+- **Third-Party Agent Skill (`SKILL.md`):** `https://github.com/orvenant/medtrace-iq/blob/main/SKILL.md`
 - **Rovo MCP Endpoint:** `https://mcp.atlassian.com/forge/f6caf1a8-53e4-49e6-8e26-f98807c8151c`
 
 ---

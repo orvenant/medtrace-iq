@@ -25,7 +25,7 @@
 3. Pricing: **Free** (zero billing friction; full compatibility with single-app Jira listing).
 4. Provide:
    - App Summary & Description (from `README.md`)
-   - Privacy Policy URL (`https://github.com/vizral/medtrace-iq/blob/main/PRIVACY.md`)
+   - Privacy Policy URL (`https://github.com/orvenant/medtrace-iq/blob/main/PRIVACY.md`)
    - Support Email (`am.ebrahimzadeh@gmail.com`)
    - 3 crisp screenshots captured from `one-atlas-ypfd.atlassian.net` (v3 Cockpit + 3×3 Risk Matrix, Blast-Radius & TWG Graph, Slide-Over Audit Drawer / Executive Dashboard Gadget / Rovo Copilot).
 5. Submit for Marketplace review **as early as possible (before Dec 10, 2026)** so Atlassian's review completes well ahead of the Dec 22, 2026 Codegeist deadline, and copy the live Marketplace listing URL or AMKT review ticket URL into the Codegeist 2026 Devpost submission form!
