@@ -1,0 +1,288 @@
+modules:
+  jira:projectPage:
+    - key: medtrace-cockpit
+      resource: ui-dist
+      resolver:
+        function: ui-resolver
+      title: MedTrace IQ
+      icon: resource:icons;medtrace-icon.svg
+      layout: blank
+
+  jira:issuePanel:
+    - key: medtrace-issue-panel
+      resource: ui-dist
+      resolver:
+        function: ui-resolver
+      title: MedTrace IQ Regulatory Guardrail
+      icon: resource:icons;medtrace-icon.svg
+      viewportSize: large
+
+  rovo:agent:
+    - key: medtrace-copilot
+      name: MedTrace QMS Copilot
+      description: >-
+        Quality management and release governance copilot correlating openFDA
+        enforcement records, Teamwork Graph context, and Jira design controls so
+        regulated MedTech teams ship with confidence.
+      icon: resource:icons;medtrace-icon.svg
+      prompt: resource:agent-assets;copilot-prompt.txt
+      conversationStarters:
+        - Run a Ship-Confidence release readiness audit for this Jira project
+        - Search public openFDA Class I and Class II device enforcement records
+        - Trace Teamwork Graph context and QMS documentation gaps for an issue
+        - Create an ISO 13485 CAPA ticket linked to a blocked design control issue
+      actions:
+        - get-project-readiness
+        - analyze-issue-compliance
+        - search-fda-recalls
+        - query-teamwork-graph-context
+        - create-capa-ticket
+        - record-regulatory-signoff
+      skills:
+        - fda-recall-impact
+        - capa-triage
+        - dhf-audit-check
+      followUpPrompt: >-
+        Suggest 2 concrete next compliance actions (such as creating a linked
+        CAPA, inspecting a live FDA recall, or recording QA regulatory sign-off)
+        based on the findings just presented.
+
+  rovo:skill:
+    - key: fda-recall-impact
+      source:
+        dir: skills/fda-recall-impact
+      dependencies:
+        tools:
+          - search-fda-recalls
+          - analyze-issue-compliance
+          - query-teamwork-graph-context
+    - key: capa-triage
+      source:
+        dir: skills/capa-triage
+      dependencies:
+        tools:
+          - analyze-issue-compliance
+          - create-capa-ticket
+          - record-regulatory-signoff
+    - key: dhf-audit-check
+      source:
+        dir: skills/dhf-audit-check
+      dependencies:
+        tools:
+          - get-project-readiness
+          - query-teamwork-graph-context
+          - record-regulatory-signoff
+
+  rovo:mcp:
+    - key: medtrace-mcp
+      name: MedTrace MCP
+      tools:
+        - get-project-readiness
+        - analyze-issue-compliance
+        - search-fda-recalls
+        - query-teamwork-graph-context
+        - create-capa-ticket
+        - record-regulatory-signoff
+
+  action:
+    - key: get-project-readiness
+      name: Get MedTech Project Readiness
+      function: fn-proj-readiness
+      actionVerb: GET
+      description: >-
+        Evaluate FDA 21 CFR 820 and ISO 13485 ship-confidence readiness across
+        all issues in a Jira project using live openFDA recall signals and
+        Teamwork Graph context.
+      inputs:
+        projectKey:
+          title: Project Key
+          type: string
+          required: true
+          description: Jira project key (for example MED or PLAT) to audit for release
+            readiness.
+
+    - key: analyze-issue-compliance
+      name: Analyze Issue Compliance
+      function: fn-issue-audit
+      actionVerb: GET
+      description: >-
+        Run a deep regulatory ship-confidence analysis on a single Jira issue,
+        including ISO 14971 risk tier, DHF checklist status, Teamwork Graph
+        context, and matching live FDA recalls.
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: Jira issue key (for example MED-12) to evaluate.
+
+    - key: search-fda-recalls
+      name: Search Live FDA Recalls
+      function: fn-fda-recalls
+      actionVerb: GET
+      description: >-
+        Query the live US openFDA Medical Device Enforcement and Recall database
+        by device keyword, subsystem, or classification (Class I, Class II,
+        Class III).
+      inputs:
+        keyword:
+          title: Device or Subsystem Keyword
+          type: string
+          required: true
+          description: Medical device term such as infusion pump, pacemaker, catheter,
+            ventilator, or glucose sensor.
+        classification:
+          title: FDA Recall Class
+          type: string
+          required: false
+          description: Optional recall class filter (Class I, Class II, or Class III).
+        limit:
+          title: Max Results
+          type: number
+          required: false
+          description: Maximum number of recall records to return (1 to 10, default 5).
+
+    - key: query-teamwork-graph-context
+      name: Query Teamwork Graph Context
+      function: fn-twg-query
+      actionVerb: GET
+      description: >-
+        Traverse Atlassian Teamwork Graph curated queries to surface linked
+        teams, Atlassian goals, Confluence SOP documents, issue comments, and
+        external PRs or deployments.
+      inputs:
+        projectKey:
+          title: Project Key
+          type: string
+          required: false
+          description: Optional Jira project key to inspect space teams and work items in
+            Teamwork Graph.
+        issueKey:
+          title: Issue Key
+          type: string
+          required: false
+          description: Optional Jira issue key to inspect linked goals, hierarchy,
+            comments, and dev artifacts in Teamwork Graph.
+
+    - key: create-capa-ticket
+      name: Create ISO 13485 CAPA Ticket
+      function: fn-create-capa
+      actionVerb: CREATE
+      description: >-
+        Create a structured FDA 21 CFR 820.100 / ISO 13485 Corrective and
+        Preventive Action (CAPA) issue in Jira and link it to the triggering
+        work item with full regulatory audit context.
+      inputs:
+        projectKey:
+          title: Project Key
+          type: string
+          required: true
+          description: Jira project key where the CAPA issue should be created.
+        sourceIssueKey:
+          title: Source Issue Key
+          type: string
+          required: false
+          description: Optional related Jira issue key to link to the new CAPA ticket.
+        title:
+          title: CAPA Title
+          type: string
+          required: true
+          description: Concise summary of the corrective and preventive action.
+        severity:
+          title: Risk Severity
+          type: string
+          required: true
+          description: Severity level (Critical, High, Medium, or Low) aligned to ISO 14971.
+        rationale:
+          title: Regulatory Rationale & Root Cause
+          type: string
+          required: true
+          description: Detailed description of the compliance gap, FDA recall parallel, or
+            verification defect.
+        fdaRecallNumber:
+          title: FDA Recall Number
+          type: string
+          required: false
+          description: Optional live openFDA recall number triggering this CAPA.
+
+    - key: record-regulatory-signoff
+      name: Record QA Regulatory Sign-Off
+      function: fn-signoff
+      actionVerb: UPDATE
+      description: >-
+        Record a formal QA/Regulatory release decision (Approved, Conditional,
+        or Hold) in the immutable MedTrace audit ledger and post an audit-trail
+        comment on the Jira issue.
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: Jira issue key receiving the regulatory sign-off decision.
+        decision:
+          title: Decision
+          type: string
+          required: true
+          description: Release gate decision (Approved, Conditional, or Hold).
+        rationale:
+          title: Sign-Off Rationale
+          type: string
+          required: true
+          description: Evidence summary and justification recorded for FDA 21 CFR 820 /
+            ISO 13485 audit trail.
+
+  function:
+    - key: ui-resolver
+      handler: index.resolverHandler
+    - key: fn-proj-readiness
+      handler: index.actGetProjectReadiness
+    - key: fn-issue-audit
+      handler: index.actAnalyzeIssueCompliance
+    - key: fn-fda-recalls
+      handler: index.actSearchFdaRecalls
+    - key: fn-twg-query
+      handler: index.actQueryTeamworkGraph
+    - key: fn-create-capa
+      handler: index.actCreateCapaTicket
+    - key: fn-signoff
+      handler: index.actRecordRegulatorySignoff
+
+resources:
+  - key: ui-dist
+    path: static/ui/dist
+  - key: icons
+    path: static/icons
+  - key: agent-assets
+    path: resources/agent
+
+permissions:
+  scopes:
+    - storage:app
+    - read:jira-work
+    - write:jira-work
+    - read:jira-user
+    - read:graph:issue:jira
+    - read:graph:project:jira
+    - read:graph:issue-comment:jira
+    - read:graph:user:atlassian
+    - read:graph:team:atlassian
+    - read:graph:goal:atlassian
+    - read:graph:page:confluence
+    - read:graph:space:confluence
+    - read:graph:pull-request:external
+    - read:graph:deployment:external
+  external:
+    fetch:
+      backend:
+        - address: 'https://api.fda.gov'
+          inScopeEUD: false
+  content:
+    styles:
+      - unsafe-inline
+
+app:
+  runtime:
+    name: nodejs24.x
+    memoryMB: 512
+    architecture: arm64
+  id: ari:cloud:ecosystem::app/f6caf1a8-53e4-49e6-8e26-f98807c8151c

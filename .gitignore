@@ -1,0 +1,7 @@
+node_modules/
+static/ui/node_modules/
+static/ui/dist/
+.DS_Store
+*.log
+.env*
+*token*
