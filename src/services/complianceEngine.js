@@ -515,40 +515,90 @@ export function buildBlastRadiusGraph({ project, evaluations = [], twg = {}, fda
 }
 
 /**
- * Generate an auditor-ready FDA 21 CFR 820.30 / ISO 13485 Design History File (DHF) Markdown report.
+ * Compute executive 5-pillar coverage averages and ISO 14971 Risk × Release Verdict heatmap matrix.
  */
-export function generateAuditMarkdown({ project, summary, evaluations, twg, ledger }) {
+export function computeExecutiveAnalytics(evaluations = []) {
+  const count = evaluations.length || 1;
+  const sum = {
+    designControl: 0,
+    verificationValidation: 0,
+    sopOrgContext: 0,
+    fdaRecallClearance: 0,
+    qaSignOff: 0,
+  };
+
+  const matrix = {
+    Critical: { HOLD: 0, CONDITIONAL: 0, SHIP_READY: 0 },
+    High: { HOLD: 0, CONDITIONAL: 0, SHIP_READY: 0 },
+    Moderate: { HOLD: 0, CONDITIONAL: 0, SHIP_READY: 0 },
+  };
+
+  for (const ev of evaluations) {
+    sum.designControl += ev.pillars?.designControl?.score || 0;
+    sum.verificationValidation += ev.pillars?.verificationValidation?.score || 0;
+    sum.sopOrgContext += ev.pillars?.sopOrgContext?.score || 0;
+    sum.fdaRecallClearance += ev.pillars?.fdaRecallClearance?.score || 0;
+    sum.qaSignOff += ev.pillars?.qaSignOff?.score || 0;
+
+    const tier = matrix[ev.riskTier] ? ev.riskTier : 'Moderate';
+    if (matrix[tier][ev.verdict] !== undefined) {
+      matrix[tier][ev.verdict] += 1;
+    }
+  }
+
+  const pillarAverages = [
+    { key: 'designControl', label: 'Design Controls (820.30)', avg: Math.round(sum.designControl / count), max: 25 },
+    { key: 'verificationValidation', label: 'V&V & ISO 14971 Evidence', avg: Math.round(sum.verificationValidation / count), max: 25 },
+    { key: 'sopOrgContext', label: 'SOP & Teamwork Graph', avg: Math.round(sum.sopOrgContext / count), max: 20 },
+    { key: 'fdaRecallClearance', label: 'openFDA Recall Clearance', avg: Math.round(sum.fdaRecallClearance / count), max: 20 },
+    { key: 'qaSignOff', label: 'QA Regulatory Sign-Off', avg: Math.round(sum.qaSignOff / count), max: 10 },
+  ].map((p) => ({ ...p, pct: Math.round((p.avg / p.max) * 100) }));
+
+  return { pillarAverages, riskMatrix: matrix };
+}
+
+/**
+ * Generate an auditor-ready FDA 21 CFR 820.30 / ISO 13485 / 21 CFR Part 11 Design History File (DHF) Markdown report.
+ */
+export function generateAuditMarkdown({ project, summary, evaluations, twg, ledger, chainVerification }) {
   const lines = [
-    `# MedTrace IQ — FDA 21 CFR 820 / ISO 13485 Release Readiness Audit Pack`,
+    `# MedTrace IQ — FDA 21 CFR 820 / ISO 13485 / 21 CFR Part 11 Release Readiness Audit Pack`,
     ``,
     `- **Project:** ${project.name} (\`${project.key}\`)`,
     `- **Generated (UTC):** ${new Date().toISOString()}`,
     `- **Overall Ship-Confidence Score:** **${summary.averageScore}/100** (${summary.overallVerdict})`,
     `- **Teamwork Graph Status:** ${twg.connected ? 'Connected (Live Curated Queries)' : 'Disconnected'} — ${twg.teams?.length || 0} Teams, ${twg.confluencePages?.length || 0} Confluence SOPs, ${twg.goals?.length || 0} Goals`,
     `- **Work Items Audited:** ${summary.totalIssues} (Ship Ready: ${summary.shipReadyCount} | Conditional: ${summary.conditionalCount} | Hold: ${summary.holdCount} | CAPAs: ${summary.capaCount})`,
+    ...(chainVerification
+      ? [
+          `- **21 CFR Part 11 Cryptographic Integrity:** ${chainVerification.valid ? 'VERIFIED VALID (SHA-256 Hash Chain)' : 'TAMPER ALERT'} — ${chainVerification.verifiedChainedEntries} chained record(s), Head Digest: \`${chainVerification.headHashShort}\``,
+        ]
+      : []),
     ``,
     `## Design History File (DHF) Traceability Matrix`,
     ``,
-    `| Issue | Subsystem | Risk Tier | Score | Verdict | Live FDA Parallels | QA Sign-Off | Top Blocking Gap |`,
-    `| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :--- |`,
+    `| Issue | Subsystem | Matched SOP (TWG) | Risk Tier | Score | Verdict | Live FDA Parallels | QA Sign-Off | Top Blocking Gap |`,
+    `| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :--- | :--- |`,
   ];
 
   for (const ev of evaluations) {
     const fdaCol = ev.matchedRecalls.length
       ? `${ev.matchedRecalls.length} (${ev.classICount} Class I)`
       : 'None';
+    const sopCol = ev.matchedSops?.[0]?.title ? ev.matchedSops[0].title.slice(0, 32) : 'Unlinked';
     const qaCol = ev.signOff ? `${ev.signOff.decision} (${ev.signOff.actorName})` : 'Pending';
     const gapCol = ev.blockingGaps[0] || 'All gates satisfied';
     lines.push(
-      `| **${ev.issueKey}** | ${ev.subsystem.label} | ${ev.riskTier} | ${ev.score}/100 | ${ev.verdict} | ${fdaCol} | ${qaCol} | ${gapCol.replace(/\|/g, '/')} |`
+      `| **${ev.issueKey}** | ${ev.subsystem.label} | ${sopCol.replace(/\|/g, '/')} | ${ev.riskTier} | ${ev.score}/100 | ${ev.verdict} | ${fdaCol} | ${qaCol} | ${gapCol.replace(/\|/g, '/')} |`
     );
   }
 
   if (ledger && ledger.length > 0) {
-    lines.push('', '## Immutable QA Regulatory Sign-Off Ledger', '');
-    for (const entry of ledger.slice(0, 20)) {
+    lines.push('', '## FDA 21 CFR Part 11 Cryptographic Audit Ledger (SHA-256)', '');
+    for (const entry of ledger.slice(0, 25)) {
+      const digest = entry.entryHash ? ` | SHA-256: \`${entry.entryHash.slice(0, 16)}…\`` : ' | Legacy pre-v3';
       lines.push(
-        `- **${entry.recordedAt}** | \`${entry.issueKey}\` → **${entry.decision}** by *${entry.actorName}* (${entry.id}): ${entry.rationale}`
+        `- **${entry.recordedAt}** | \`${entry.issueKey}\` → **${entry.decision}** (${entry.eventType || 'QA_SIGNOFF'}) by *${entry.actorName}* (\`${entry.id}\`${digest}): ${entry.rationale}`
       );
     }
   }

@@ -15,7 +15,7 @@
 
 ## 2. Enable External Rovo MCP Exposure (For Bonus Prize Verification)
 1. Open Atlassian Administration for `one-atlas-ypfd.atlassian.net` → **Apps → Sites → one-atlas-ypfd → Connected apps**.
-2. Select **MedTrace IQ** → toggle on external MCP tool exposure for all 6 tools (`get-project-readiness`, `analyze-issue-compliance`, `search-fda-recalls`, `query-teamwork-graph-context`, `create-capa-ticket`, `record-regulatory-signoff`).
+2. Select **MedTrace IQ** → toggle on external MCP tool exposure for all 7 tools (`get-project-readiness`, `analyze-issue-compliance`, `search-fda-recalls`, `query-teamwork-graph-context`, `create-capa-ticket`, `record-regulatory-signoff`, `verify-audit-chain`).
 3. Verify OAuth 2.1 connection to `https://mcp.atlassian.com/forge/f6caf1a8-53e4-49e6-8e26-f98807c8151c`.
 
 ## 3. Submit Free App Listing to Atlassian Marketplace (Bonus Prize: 6 × $1,500)
@@ -24,7 +24,7 @@
 3. Pricing: **Free** (zero billing friction; full compatibility with single-app Jira listing).
 4. Provide:
    - App Summary & Description (from `README.md`)
-   - Privacy Policy URL (`https://github.com/<user>/medtrace-iq/blob/main/PRIVACY.md`)
+   - Privacy Policy URL (`https://github.com/vizral/medtrace-iq/blob/main/PRIVACY.md`)
    - Support Email (`am.ebrahimzadeh@gmail.com`)
-   - 3 crisp screenshots captured from `one-atlas-ypfd.atlassian.net` (Cockpit, Blast-Radius Graph, Issue Guardrail + Rovo).
-5. Submit for Marketplace review and copy the **AMKT review ticket URL** or live Marketplace listing URL into the Codegeist 2026 Devpost submission form!
+   - 3 crisp screenshots captured from `one-atlas-ypfd.atlassian.net` (v3 Cockpit + 3×3 Risk Matrix, Blast-Radius & TWG Graph, Slide-Over Audit Drawer / Executive Dashboard Gadget / Rovo Copilot).
+5. Submit for Marketplace review **as early as possible (before Dec 10, 2026)** so Atlassian's review completes well ahead of the Dec 22, 2026 Codegeist deadline, and copy the live Marketplace listing URL or AMKT review ticket URL into the Codegeist 2026 Devpost submission form!

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getForgeContext } from './utils/bridge';
 import ProjectCockpit from './components/ProjectCockpit';
 import IssueGuardrailPanel from './components/IssueGuardrailPanel';
+import ExecutiveGadget from './components/ExecutiveGadget';
 
 export default function App() {
   const [ctx, setCtx] = useState(null);
@@ -46,6 +47,10 @@ export default function App() {
   const moduleKey = ctx.moduleKey || '';
   const issueKey = ctx.extension?.issue?.key || '';
   const projectKey = ctx.extension?.project?.key || '';
+
+  if (moduleKey === 'medtrace-exec-gadget') {
+    return <ExecutiveGadget context={ctx} />;
+  }
 
   if (moduleKey === 'medtrace-issue-panel' || (issueKey && moduleKey !== 'medtrace-cockpit')) {
     return <IssueGuardrailPanel issueKey={issueKey} />;

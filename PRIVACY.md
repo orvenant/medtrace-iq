@@ -3,10 +3,10 @@
 **Effective Date:** November 23, 2026
 
 ## 1. Architecture & Data Residency
-MedTrace IQ is built 100% natively on **Atlassian Forge** ("Runs on Atlassian"). All application logic executes inside Atlassian's managed serverless infrastructure, and all persistent regulatory checklists, governance policies, and audit sign-off logs are stored exclusively in **Atlassian Forge Storage (`@forge/kvs`)** pinned to your Atlassian Cloud site.
+MedTrace IQ is built 100% natively on **Atlassian Forge** (`nodejs24.x`). All application logic executes inside Atlassian's managed serverless infrastructure, and all persistent regulatory checklists, governance policies, and SHA-256 hash-chained **FDA 21 CFR Part 11** audit logs are stored exclusively in **Atlassian Forge Storage (`@forge/kvs`)** pinned to your Atlassian Cloud site.
 
 ## 2. Data Accessed
-- **Jira Cloud REST API & Atlassian Teamwork Graph API:** Read on demand under the invoking user's permissions (`api.asUser()`) to compute regulatory ship-confidence scores, display context blast-radius graphs, and record authorized CAPA tickets or audit comments.
+- **Jira Cloud REST API & Atlassian Teamwork Graph API:** Read on demand under the invoking user's permissions (`api.asUser()`) for interactive UI, Rovo Agent, and Rovo MCP calls. Autonomous background issue triggers (`avi:jira:created:issue`, `avi:jira:updated:issue`) and Jira workflow release validators (`jira:workflowValidator`) execute inside Atlassian's scoped app context (`api.asApp()`) solely to screen regulated device keywords, apply the `medtrace-fda-hold` label, post structured safety alert comments, and validate release readiness transitions.
 - **No Third-Party Storage of Customer Data:** MedTrace IQ does **not** transmit, store, or log your Jira issue descriptions, Confluence pages, user PII, or Teamwork Graph data to any external server.
 
 ## 3. External API Communication (openFDA)

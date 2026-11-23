@@ -98,6 +98,18 @@ export async function getCurrentUser() {
   };
 }
 
+export async function getAccessibleProjects(maxResults = 30) {
+  const res = await api.asUser().requestJira(route`/rest/api/3/project/search?maxResults=${maxResults}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.values || []).map((p) => ({
+    id: p.id,
+    key: p.key,
+    name: p.name,
+    projectTypeKey: p.projectTypeKey || 'software',
+  }));
+}
+
 export async function getProjectDetails(projectKey) {
   const res = await api.asUser().requestJira(route`/rest/api/3/project/${projectKey}`);
   if (!res.ok) throw new Error(`Jira project ${projectKey} not accessible (${res.status})`);
@@ -269,19 +281,24 @@ export async function createCapaIssue({
   };
 }
 
-export async function addRegulatoryAuditComment(issueKey, { decision, rationale, score, actorName, recordedAt, entryId }) {
+export async function addRegulatoryAuditComment(issueKey, { decision, rationale, score, actorName, recordedAt, entryId, entryHash, previousHash }) {
   const badge = decision === 'Approved' ? 'APPROVED' : decision === 'Hold' ? 'REGULATORY HOLD' : 'CONDITIONAL';
+  const bullets = [
+    `Ledger Entry ID: ${entryId}`,
+    `Decision: ${decision}`,
+    `Ship-Confidence Score at Review: ${score !== null && score !== undefined ? `${score}/100` : 'Evaluated'}`,
+    `Reviewer: ${actorName}`,
+    `Timestamp (UTC): ${recordedAt}`,
+    `Regulatory Rationale: ${rationale}`,
+  ];
+  if (entryHash) {
+    bullets.push(`FDA 21 CFR Part 11 SHA-256 Digest: ${entryHash}`);
+    bullets.push(`Chained Previous Digest: ${String(previousHash || '').slice(0, 24)}...`);
+  }
   const body = buildAdfDocument([
     {
       heading: `MedTrace IQ Regulatory Audit Sign-Off — ${badge}`,
-      bullets: [
-        `Ledger Entry ID: ${entryId}`,
-        `Decision: ${decision}`,
-        `Ship-Confidence Score at Review: ${score !== null && score !== undefined ? `${score}/100` : 'Evaluated'}`,
-        `Reviewer: ${actorName}`,
-        `Timestamp (UTC): ${recordedAt}`,
-        `Regulatory Rationale: ${rationale}`,
-      ],
+      bullets,
     },
   ]);
 

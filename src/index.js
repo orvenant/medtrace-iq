@@ -6,4 +6,7 @@ export {
   actQueryTeamworkGraph,
   actCreateCapaTicket,
   actRecordRegulatorySignoff,
+  actVerifyAuditChain,
 } from './handlers/rovoActions';
+export { onJiraIssueEvent } from './handlers/triggerHandler';
+export { validateReleaseTransition } from './handlers/workflowValidator';

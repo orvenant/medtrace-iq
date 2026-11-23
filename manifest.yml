@@ -17,6 +17,39 @@ modules:
       icon: resource:icons;medtrace-icon.svg
       viewportSize: large
 
+  jira:dashboardGadget:
+    - key: medtrace-exec-gadget
+      title: MedTrace IQ Release Readiness
+      description: >-
+        Executive FDA 21 CFR 820 / ISO 13485 Ship-Confidence score, live openFDA
+        Class I alerts, Teamwork Graph context, and 21 CFR Part 11 SHA-256 audit
+        chain status.
+      thumbnail: https://raw.githubusercontent.com/vizral/medtrace-iq/main/static/icons/medtrace-icon.svg
+      resource: ui-dist
+      resolver:
+        function: ui-resolver
+      edit:
+        resource: ui-dist
+
+  jira:workflowValidator:
+    - key: medtrace-release-gate
+      name: MedTrace IQ FDA/ISO Release Gate
+      description: >-
+        Blocks Jira release transitions unless the work item passes MedTrace IQ
+        Ship-Confidence threshold, has zero unmitigated FDA Class I holds, and
+        has formal QA regulatory sign-off.
+      function: fn-wf-validator
+      projectTypes:
+        - company-managed
+        - team-managed
+
+  trigger:
+    - key: medtrace-issue-monitor
+      function: fn-issue-trigger
+      events:
+        - avi:jira:created:issue
+        - avi:jira:updated:issue
+
   rovo:agent:
     - key: medtrace-copilot
       name: MedTrace QMS Copilot
@@ -38,6 +71,7 @@ modules:
         - query-teamwork-graph-context
         - create-capa-ticket
         - record-regulatory-signoff
+        - verify-audit-chain
       skills:
         - fda-recall-impact
         - capa-triage
@@ -72,6 +106,7 @@ modules:
           - get-project-readiness
           - query-teamwork-graph-context
           - record-regulatory-signoff
+          - verify-audit-chain
 
   rovo:mcp:
     - key: medtrace-mcp
@@ -83,6 +118,7 @@ modules:
         - query-teamwork-graph-context
         - create-capa-ticket
         - record-regulatory-signoff
+        - verify-audit-chain
 
   action:
     - key: get-project-readiness
@@ -231,6 +267,21 @@ modules:
           description: Evidence summary and justification recorded for FDA 21 CFR 820 /
             ISO 13485 audit trail.
 
+    - key: verify-audit-chain
+      name: Verify 21 CFR Part 11 Chain
+      function: fn-verify-chain
+      actionVerb: GET
+      description: >-
+        Cryptographically verify the SHA-256 hash-chained FDA 21 CFR Part 11
+        audit ledger for a Jira project to confirm tamper-evident integrity of
+        all QA sign-offs and autonomous FDA monitor alerts.
+      inputs:
+        projectKey:
+          title: Project Key
+          type: string
+          required: true
+          description: Jira project key (for example MED) whose cryptographic audit chain should be verified.
+
   function:
     - key: ui-resolver
       handler: index.resolverHandler
@@ -246,6 +297,12 @@ modules:
       handler: index.actCreateCapaTicket
     - key: fn-signoff
       handler: index.actRecordRegulatorySignoff
+    - key: fn-verify-chain
+      handler: index.actVerifyAuditChain
+    - key: fn-issue-trigger
+      handler: index.onJiraIssueEvent
+    - key: fn-wf-validator
+      handler: index.validateReleaseTransition
 
 resources:
   - key: ui-dist

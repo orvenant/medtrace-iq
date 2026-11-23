@@ -7,6 +7,8 @@ import {
   performUpdateChecklist,
   performSavePolicy,
   performSeedDemo,
+  performVerifyAuditChain,
+  performGetAccessibleProjects,
 } from './orchestrator';
 import { searchFdaDeviceRecalls } from '../services/openFdaService';
 import { pingTeamworkGraph } from '../services/teamworkGraphService';
@@ -17,9 +19,10 @@ function extractAppUuid(context) {
   const raw = context?.installContext || '';
   const localId = context?.localId || '';
   const fromLocal = localId.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  const fromInstall = raw.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
   return {
-    cloudId: context?.cloudId || '',
-    accountId: context?.accountId || '',
+    cloudId: context?.cloudId || (fromInstall ? fromInstall[1] : '') || raw.split('/').pop() || '',
+    accountId: context?.accountId || context?.principal?.accountId || '',
     projectKey: context?.extension?.project?.key || '',
     issueKey: context?.extension?.issue?.key || '',
     moduleKey: context?.moduleKey || '',
@@ -121,6 +124,17 @@ resolver.define('seedDemoWorkspace', async ({ payload, context }) => {
   const projectKey = payload?.projectKey || meta.projectKey;
   if (!projectKey) throw new Error('projectKey is required');
   return performSeedDemo({ projectKey });
+});
+
+resolver.define('verifyAuditChain', async ({ payload, context }) => {
+  const meta = extractAppUuid(context);
+  const projectKey = payload?.projectKey || meta.projectKey;
+  if (!projectKey) throw new Error('projectKey is required');
+  return performVerifyAuditChain({ projectKey });
+});
+
+resolver.define('getAccessibleProjects', async () => {
+  return performGetAccessibleProjects();
 });
 
 export const resolverHandler = resolver.getDefinitions();

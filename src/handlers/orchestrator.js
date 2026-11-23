@@ -1,5 +1,6 @@
 import {
   getCurrentUser,
+  getAccessibleProjects,
   getProjectDetails,
   getProjectIssues,
   getIssueDetails,
@@ -15,7 +16,10 @@ import {
   getIssueSignOff,
   recordSignOffEntry,
   getProjectAuditLedger,
+  verifyProjectAuditChain,
   getIssueComplianceStateMap,
+  getCachedTwgSnapshot,
+  setCachedTwgSnapshot,
 } from '../services/storageService';
 import { fetchRecallsForSubsystems, searchFdaDeviceRecalls } from '../services/openFdaService';
 import { fetchProjectTeamworkGraph, fetchIssueTeamworkGraph } from '../services/teamworkGraphService';
@@ -23,6 +27,7 @@ import {
   detectDeviceSubsystem,
   matchRecallsForIssue,
   evaluateIssueCompliance,
+  computeExecutiveAnalytics,
   buildBlastRadiusGraph,
   generateAuditMarkdown,
 } from '../services/complianceEngine';
@@ -47,7 +52,7 @@ export async function buildProjectCockpitData({ projectKey, cloudId, accountId }
     ]),
   ].slice(0, 5);
 
-  const [twg, fdaBundle, complianceMap] = await Promise.all([
+  const [twgRaw, fdaBundle, complianceMap, cachedTwg] = await Promise.all([
     fetchProjectTeamworkGraph({
       cloudId,
       projectId: project.id,
@@ -55,7 +60,36 @@ export async function buildProjectCockpitData({ projectKey, cloudId, accountId }
     }),
     fetchRecallsForSubsystems(fdaKeywords, 4),
     getIssueComplianceStateMap(issues.map((i) => i.key)),
+    getCachedTwgSnapshot(projectKey),
   ]);
+
+  // Merge live Teamwork Graph results per entity type with the site's last verified TWG snapshot
+  // so partial transient shard errors never discard real Teams, Confluence SOPs, or Goals.
+  const mergedTeams = twgRaw.teams?.length ? twgRaw.teams : cachedTwg?.teams || [];
+  const mergedSops = twgRaw.confluencePages?.length ? twgRaw.confluencePages : cachedTwg?.confluencePages || [];
+  const mergedGoals = twgRaw.goals?.length ? twgRaw.goals : cachedTwg?.goals || [];
+  const mergedItems = twgRaw.graphWorkItems?.length ? twgRaw.graphWorkItems : cachedTwg?.graphWorkItems || [];
+  const mergedLinks = twgRaw.linkedPageRelations?.length
+    ? twgRaw.linkedPageRelations
+    : cachedTwg?.linkedPageRelations || [];
+
+  const twg = {
+    ...twgRaw,
+    teams: mergedTeams,
+    confluencePages: mergedSops,
+    goals: mergedGoals,
+    graphWorkItems: mergedItems,
+    linkedPageRelations: mergedLinks,
+    snapshotUsed:
+      Boolean(cachedTwg) &&
+      ((!twgRaw.teams?.length && mergedTeams.length > 0) ||
+        (!twgRaw.confluencePages?.length && mergedSops.length > 0) ||
+        (!twgRaw.goals?.length && mergedGoals.length > 0)),
+  };
+
+  if (mergedTeams.length + mergedSops.length + mergedGoals.length > 0) {
+    await setCachedTwgSnapshot(projectKey, twg);
+  }
 
   const evaluations = issues.map((issue) => {
     const sub = detectDeviceSubsystem(issue);
@@ -113,23 +147,31 @@ export async function buildProjectCockpitData({ projectKey, cloudId, accountId }
     fdaRecalls: fdaBundle.allRecalls,
   });
 
+  const [chainVerification, analytics] = [
+    await verifyProjectAuditChain(projectKey),
+    computeExecutiveAnalytics(evaluations),
+  ];
+
   const auditMarkdown = generateAuditMarkdown({
     project,
     summary,
     evaluations,
     twg,
     ledger,
+    chainVerification,
   });
 
   return {
     project,
     policy,
     summary,
+    analytics,
     evaluations,
     twg,
     fda: fdaBundle,
     graph,
     ledger,
+    chainVerification,
     auditMarkdown,
     generatedAt: new Date().toISOString(),
   };
@@ -144,7 +186,7 @@ export async function buildIssueComplianceData({ issueKey, cloudId, accountId })
   const effectiveAccountId = accountId || user.accountId;
   const subsystem = detectDeviceSubsystem(issue);
 
-  const [policy, checklist, signOff, twg, fdaResult] = await Promise.all([
+  const [policy, checklist, signOff, twgRaw, fdaResult] = await Promise.all([
     getProjectPolicy(issue.projectKey),
     getIssueChecklist(issue.key),
     getIssueSignOff(issue.key),
@@ -155,6 +197,21 @@ export async function buildIssueComplianceData({ issueKey, cloudId, accountId })
     }),
     searchFdaDeviceRecalls({ keyword: subsystem.fdaKeyword, limit: 6, ongoingPreferred: true }),
   ]);
+
+  let twg = twgRaw;
+  if ((twg.teams?.length || 0) === 0 && (twg.confluencePages?.length || 0) === 0) {
+    const cached = await getCachedTwgSnapshot(issue.projectKey);
+    if (cached) {
+      twg = {
+        ...twg,
+        teams: cached.teams || [],
+        confluencePages: cached.confluencePages || [],
+        goals: twg.goals?.length ? twg.goals : cached.goals || [],
+        snapshotUsed: true,
+        snapshotAt: cached.cachedIso,
+      };
+    }
+  }
 
   const evaluation = evaluateIssueCompliance({
     issue,
@@ -221,6 +278,8 @@ export async function performRegulatorySignOff({ issueKey, decision, rationale, 
     actorName: user.displayName,
     recordedAt: entry.recordedAt,
     entryId: entry.id,
+    entryHash: entry.entryHash,
+    previousHash: entry.previousHash,
   });
 
   return {
@@ -229,6 +288,14 @@ export async function performRegulatorySignOff({ issueKey, decision, rationale, 
     updatedScoreEstimate: preliminary.score,
     cloudId,
   };
+}
+
+export async function performVerifyAuditChain({ projectKey }) {
+  return verifyProjectAuditChain(projectKey);
+}
+
+export async function performGetAccessibleProjects() {
+  return getAccessibleProjects(30);
 }
 
 export async function performUpdateChecklist({ issueKey, patch }) {

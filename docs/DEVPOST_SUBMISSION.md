@@ -1,14 +1,14 @@
-# MedTrace IQ — Codegeist 2026 Devpost Submission Package
+# MedTrace IQ v3.0 — Codegeist 2026 Devpost Submission Package
 
 - **Project Name:** MedTrace IQ
-- **Tagline (≤ 60 chars):** FDA/ISO MedTech release context via TWG, Rovo & MCP
+- **Tagline (≤ 60 chars):** Autonomous FDA/ISO MedTech governance via Forge, Rovo & TWG
 - **Primary Category:** Apps for Specialized Industries
 - **Bonus Prizes Entered (All 4):**
-  1. Best Agents — Rovo/Assignable agents (`rovo:agent` + 3 `rovo:skill` + 6 `action`)
-  2. Best app with Atlassian MCP (`rovo:mcp` + open-source `SKILL.md`)
-  3. Best apps with Teamwork Graph integration (`requestTeamworkGraph` Curated Queries)
+  1. Best Agents — Rovo/Assignable agents (`rovo:agent` + 3 `rovo:skill` + 7 `action`)
+  2. Best app with Atlassian MCP (`rovo:mcp` exposing 7 tools + open-source `SKILL.md`)
+  3. Best apps with Teamwork Graph integration (`requestTeamworkGraph` 11 Curated Queries)
   4. Best Marketplace published app (Atlassian Marketplace Free Listing)
-- **Built With:** Atlassian Forge (`nodejs24.x`), Atlassian Teamwork Graph API, Atlassian Rovo Agent & Skills, Atlassian Rovo MCP, Forge Storage (`@forge/kvs`), Jira Cloud REST API v3, React 18, Vite, US openFDA Medical Device Enforcement API
+- **Built With:** Atlassian Forge (`nodejs24.x`), Forge Triggers (`avi:jira:created:issue` / `updated:issue`), Jira Workflow Validator (`jira:workflowValidator`), Jira Dashboard Gadget (`jira:dashboardGadget`), Atlassian Teamwork Graph API, Atlassian Rovo Agent & Skills, Atlassian Rovo MCP, Forge Storage (`@forge/kvs`), Node Crypto SHA-256 (`21 CFR Part 11`), Jira Cloud REST API v3, React 18, Vite, US openFDA Medical Device Enforcement API
 - **GitHub Repository:** `https://github.com/vizral/medtrace-iq`
 - **Privacy Policy:** `https://github.com/vizral/medtrace-iq/blob/main/PRIVACY.md`
 - **Third-Party Agent Skill (`SKILL.md`):** `https://github.com/vizral/medtrace-iq/blob/main/SKILL.md`
@@ -21,31 +21,37 @@
 ### Inspiration
 When a medical device team modifies firmware on a volumetric infusion pump, cardiac pacemaker, or ICU ventilator, missing organizational context isn't just a productivity hiccup—it can cause a **Class I FDA recall**, a failed **ISO 13485 / FDA 21 CFR 820 audit**, or months of delayed patient care.
 
-MedTech teams already track design controls in **Jira**, Standard Operating Procedures (SOPs) and Design History Files (DHFs) in **Confluence**, and quality complaints in **Jira Service Management**. Yet critical context stays trapped across silos: engineers change a pressure threshold in Jira without knowing which Confluence SOP owner needs to sign off, which Atlassian Teams or Goals are impacted, or that the US FDA just issued an active **Class I recall** on the exact same occlusion failure mode.
+MedTech teams already track design controls in **Jira**, Standard Operating Procedures (SOPs) and Design History Files (DHFs) in **Confluence**, and quality complaints in **Jira Service Management**. Yet critical context stays trapped across silos: engineers change a pressure threshold in Jira without knowing which Confluence SOP owner needs to sign off, which Atlassian Teams or Goals are impacted, or that the US FDA just issued an active **Class I recall** on the exact same occlusion failure mode—and release workflows lack hard cryptographic enforcement.
 
-**MedTrace IQ** brings Codegeist 2026's theme—*"Build with context. Ship with confidence."*—directly to regulated Healthcare & MedTech teams.
+**MedTrace IQ v3.0** brings Codegeist 2026's theme—*"Build with context. Ship with confidence."*—directly to regulated Healthcare & MedTech teams with **autonomous monitoring, physical release gates, and 21 CFR Part 11 cryptography**.
 
 ### What it does
-MedTrace IQ is an Atlassian Forge regulatory context, blast-radius, and ship-confidence engine installed directly into Jira:
+MedTrace IQ is an enterprise-grade, 100% native Atlassian Forge regulatory governance platform spanning 15+ Forge modules:
 
-1. **Deterministic 5-Pillar Ship-Confidence Engine (0–100):** Evaluates every Jira work item against **FDA 21 CFR 820.30**, **ISO 13485**, and **ISO 14971** across five weighted pillars: Design Control Completeness (25 pts), Verification & Validation Evidence (25 pts), SOP & Organizational Context from Teamwork Graph (20 pts), Live openFDA Recall Clearance (20 pts), and Formal QA Regulatory Sign-Off (10 pts). Unmitigated live **FDA Class I** recall parallels trigger an automatic **Regulatory Hold** cap (`≤ 49/100`).
-2. **Interactive Blast-Radius & Teamwork Graph Cockpit (`jira:projectPage`):** A 5-tab Custom UI command center featuring a live SVG topology graph linking Jira Design Controls, CAPA tickets, Atlassian Teamwork Graph Teams/Goals/Confluence SOP owners, and live US openFDA Class I/II/III enforcement signals—plus a click-to-inspect provenance panel and 1-click **Design History File (DHF) Markdown Audit Pack** export.
-3. **Contextual Jira Issue Guardrail (`jira:issuePanel`):** Embedded inside every Jira work item with a radial Ship-Confidence gauge, 5-pillar bars, interactive ISO 13485 checklist persisted in `@forge/kvs`, live Teamwork Graph context chips, matched openFDA recalls, 1-click linked **ISO 13485 CAPA** creation, and immutable **QA Regulatory Sign-Off** (logged both to Forge Storage and as structured Jira audit comments).
-4. **MedTrace QMS Copilot (`rovo:agent` + 3 `rovo:skill` + 6 `action`):** A dedicated Rovo Agent equipped with three modular `rovo:skill` playbooks (`fda-recall-impact`, `capa-triage`, `dhf-audit-check`)—complete with regulatory reference guides in `references/`—capable of auditing entire projects, inspecting issues, searching live openFDA recalls, filing linked Jira CAPAs, and recording QA sign-offs.
-5. **Atlassian Rovo MCP Server (`rovo:mcp` + Open-Source `SKILL.md`):** Exposes all 6 regulatory tools via `https://mcp.atlassian.com/forge/f6caf1a8-53e4-49e6-8e26-f98807c8151c` to both Rovo Studio and external MCP-compatible AI coding agents (Claude Code, Cursor, Antigravity, VS Code) for automated pre-merge FDA compliance gating.
-6. **1-Click MedTech Judge Demo Seeder:** Any reviewer installing MedTrace IQ on a fresh Jira project can click **⚡ Seed MedTech Demo** to populate 6 realistic cardiac, infusion pump, ventilator, catheter, CGM, and AED CAPA tickets in seconds.
+1. **Autonomous Background openFDA Trigger Monitor (`trigger`):** Watches `avi:jira:created:issue` and `avi:jira:updated:issue` in real time. The moment an engineer creates or edits a ticket touching a medical device subsystem with an active US FDA Class I recall parallel, MedTrace IQ automatically applies the `medtrace-fda-hold` label, posts a structured ADF regulatory safety alert comment citing the exact FDA recall number, and records a **SHA-256 hash-chained** entry into the audit ledger (with loop protection and KVS deduplication).
+2. **Physical Jira Workflow Release Gate (`jira:workflowValidator`):** Enforces real compliance on both Company-Managed and Team-Managed workflows—physically blocking Jira release transitions unless the work item's deterministic 5-pillar Ship-Confidence verdict equals `SHIP_READY`, surfacing the exact score and top blocking gap directly in Jira's transition banner.
+3. **FDA 21 CFR Part 11 SHA-256 Cryptographic Audit Chain:** Every QA Regulatory Sign-Off and Autonomous FDA Alert is cryptographically hash-chained (`SHA-256`) in Forge Storage (`@forge/kvs`) and printed onto Jira audit comments with full digests. QA auditors, Rovo Copilot, or external MCP clients can invoke **`verify-audit-chain`** at any time to verify zero tampering and export both **Markdown DHF Audit Packs** and machine-readable **JSON (`21cfr11-evidence-pack.v3`)** evidence bundles.
+4. **Executive Release Readiness Dashboard Gadget (`jira:dashboardGadget`):** Embeds live Ship-Confidence gauges, Ready/Conditional/Hold counts, Class I exposure alerts, and 21 CFR Part 11 SHA-256 integrity status onto any Jira Dashboard with native View/Edit configuration.
+5. **Interactive Release Cockpit, 3×3 ISO 14971 Risk Matrix & Slide-Over Audit Drawer (`jira:projectPage`):**
+   - **3×3 ISO 14971 Risk × Release Verdict Matrix:** Click any cell to cross-filter the release gate table.
+   - **5-Pillar FDA 21 CFR 820 Coverage Bars:** Real-time maturity breakdown across Design Controls, V&V, SOP & Teamwork Graph, openFDA Clearance, and QA Sign-Off.
+   - **Slide-Over Issue Audit Drawer + What-If Simulator:** Native `<dialog>` inspector letting engineers toggle ISO 13485 gate checklists in place, inspect auto-matched Teamwork Graph Confluence SOPs and openFDA recalls, and simulate projected Ship-Confidence score increases.
+   - **Zero-Overlap 4-Column Blast-Radius & Teamwork Graph Topology:** Connects `openFDA Recalls` → `Jira Design Controls & CAPAs` → `TWG Confluence SOPs` (`TWG_GOVERNS_SOP`) → `TWG Teams & Goals`.
+6. **Contextual Jira Issue Guardrail (`jira:issuePanel`):** Embedded inside every Jira work item with live Ship-Confidence gauge, 5-pillar bars, interactive ISO 13485 checklist, auto-matched Confluence SOP cards, matched openFDA recalls, SHA-256 QA sign-off badge, 1-click Linked CAPA creation, and 1-click Rovo launch.
+7. **MedTrace QMS Copilot (`rovo:agent` + 3 `rovo:skill` + 7 `action`) & Rovo MCP Server (`rovo:mcp` + `SKILL.md`):** Bundles 3 modular `rovo:skill` playbooks (`fda-recall-impact`, `capa-triage`, `dhf-audit-check`) and exposes all **7 Forge tools** (including `verify-audit-chain`) via `https://mcp.atlassian.com/forge/f6caf1a8-53e4-49e6-8e26-f98807c8151c` to Rovo Studio and external coding agents (Claude Code, Cursor, Antigravity, VS Code).
 
 ### How we built it
-- **Atlassian Forge (`nodejs24.x`, ARM64):** Single-app Jira Forge architecture (enabling a free Atlassian Marketplace listing) with zero external customer-data storage (`inScopeEUD: false`).
-- **Live Atlassian Teamwork Graph Integration:** Calls `api.asUser().requestTeamworkGraph()` using typed **Curated Queries** (`echo`, `atlassianTeamsBySpace`, `jiraSpaceWorkItems`, `atlassianUserInTeams`, `atlassianUserContent`, `atlassianUserGoalsAndProjects`, `confluencePageLinkedConfluencePages`, `jiraWorkItemGoals`, `jiraWorkItemComments`, `jiraWorkItemDevelopmentArtifacts`, `jiraWorkItemHierarchy`) with granular per-object `read:graph:*` scopes.
-- **Live US openFDA Medical Device Enforcement Integration:** Queries `https://api.fda.gov/device/enforcement.json` using strictly generic medical device subsystem terms (never sending Jira PII or proprietary text) with a 30-minute Forge KVS cache.
-- **Modern Accessible Custom UI (React 18 + Vite):** Theme-synchronized with Jira light/dark mode (`@forge/bridge` `view.theme.enable()` + CSS `color-scheme` / `light-dark()`), container-query responsive tables, accessible single-row tablist, and native `<dialog>` modals.
+- **Atlassian Forge (`nodejs24.x`, ARM64):** Single-app Jira Forge architecture (enabling a Free Atlassian Marketplace listing) with zero external customer-data storage (`inScopeEUD: false`).
+- **Live Atlassian Teamwork Graph Integration:** Calls `api.asUser().requestTeamworkGraph()` using 11 typed **Curated Queries** (`echo`, `atlassianTeamsBySpace`, `jiraSpaceWorkItems`, `atlassianUserInTeams`, `atlassianUserContent`, `atlassianUserGoalsAndProjects`, `confluencePageLinkedConfluencePages`, `jiraWorkItemGoals`, `jiraWorkItemComments`, `jiraWorkItemDevelopmentArtifacts`, `jiraWorkItemHierarchy`) with granular per-object `read:graph:*` scopes.
+- **21 CFR Part 11 SHA-256 Cryptography:** Built with Node.js native `node:crypto` (`SHA-256` canonical serialization chaining `previousHash` → `entryHash` with genesis block and legacy pre-v3 record compatibility), verified by automated tamper-detection unit tests.
+- **Live US openFDA Medical Device Enforcement Integration:** Queries `https://api.fda.gov/device/enforcement.json` using strictly generic medical device subsystem keywords (zero PII egress) with a 30-minute Forge KVS cache.
+- **Modern Accessible Custom UI (React 18 + Vite):** Synchronized with Jira light/dark mode (`@forge/bridge` `view.theme.enable()` + CSS `color-scheme` / `light-dark()`), container-query responsive tables, accessible single-row tablist, and native `<dialog>` modals and slide-over drawers.
 
 ### How MedTrace IQ Meets Each Bonus Prize Requirement
-- **Best Agents (Rovo):** Declares `rovo:agent` (`medtrace-copilot`), 3 reusable `rovo:skill` modules (`fda-recall-impact`, `capa-triage`, `dhf-audit-check`) with `references/` guides, 6 executable `action` modules, and programmatic launch via `@forge/bridge` `rovo.open()`.
-- **Best app with Atlassian MCP:** Declares `rovo:mcp` (`medtrace-mcp`) exposing all 6 Forge actions at `https://mcp.atlassian.com/forge/f6caf1a8-53e4-49e6-8e26-f98807c8151c` paired with an open-source third-party agent `SKILL.md` in the repository root.
-- **Best apps with Teamwork Graph integration:** Executes 11 live Teamwork Graph Curated Queries across Jira, Confluence SOPs, Atlassian Teams, Atlassian Goals, and External Dev Artifacts, displaying live per-query telemetry inside the app and rendering discovered nodes in the interactive Blast-Radius Graph.
-- **Best Marketplace published app:** Deployed cleanly to `production` (`forge lint`: 0 errors, 0 warnings) with full `PRIVACY.md` and Apache 2.0 `LICENSE`, submitted as a Free Atlassian Marketplace app.
+- **Best Agents (Rovo):** Declares `rovo:agent` (`medtrace-copilot`), 3 reusable `rovo:skill` modules (`fda-recall-impact`, `capa-triage`, `dhf-audit-check`) with `references/` guides, 7 executable `action` modules, and programmatic launch via `@forge/bridge` `rovo.open()`.
+- **Best app with Atlassian MCP:** Declares `rovo:mcp` (`medtrace-mcp`) exposing all 7 Forge tools at `https://mcp.atlassian.com/forge/f6caf1a8-53e4-49e6-8e26-f98807c8151c` paired with an open-source third-party agent `SKILL.md` in the repository root.
+- **Best apps with Teamwork Graph integration:** Executes 11 live Teamwork Graph Curated Queries across Jira, Confluence SOPs, Atlassian Teams, Atlassian Goals, and External Dev Artifacts, semantically linking Confluence SOPs to matching Jira design controls (`TWG_GOVERNS_SOP`) and displaying real-time per-query telemetry.
+- **Best Marketplace published app:** Deployed cleanly to `production` (`forge lint`: 0 errors, 0 warnings; 8/8 unit tests passing) with full `PRIVACY.md` and Apache 2.0 `LICENSE`, submitted as a Free Atlassian Marketplace app.
 
 ---
 
@@ -53,11 +59,14 @@ MedTrace IQ is an Atlassian Forge regulatory context, blast-radius, and ship-con
 1. Click the **Installation Link** to install **MedTrace IQ** into your Jira Cloud site (and optionally connect Confluence for full Confluence SOP discovery via Teamwork Graph).
 2. Open any Jira project → click **Apps → MedTrace IQ** in the project navigation bar.
 3. Click **⚡ Seed MedTech Demo** in the top-right header to automatically populate 6 regulated medical device tickets (`Infusion Pump`, `Cardiac Pacemaker`, `ICU Ventilator`, `Ablation Catheter`, `CGM`, and `[CAPA] AED Battery`).
-4. Explore all 5 tabs:
-   - **Release Readiness Cockpit:** Filter by `Hold` and inspect live Class I FDA recall exposure.
-   - **Blast-Radius & TWG Graph:** Click red openFDA, blue Jira, and teal Teamwork Graph SOP nodes to inspect provenance.
-   - **Live openFDA Recall Radar:** Search live FDA recalls (e.g., `"ventilator"` or `"catheter"`) and click **+ Create Impact CAPA**.
-   - **DHF Matrix & Governance:** Customize release gate thresholds and download the Markdown DHF Audit Pack.
-   - **Rovo Agent · MCP · Demo Setup:** Inspect live Teamwork Graph per-query telemetry (`ok=true`) and copy the Rovo MCP config.
-5. Open any seeded Jira issue → click **Apps → MedTrace IQ Regulatory Guardrail** → toggle ISO 13485 checklist items and click **QA Sign-Off** to see the live score update and audit comment posted to Jira.
-6. Open **Rovo Chat** → select **MedTrace QMS Copilot** → ask: *"Run a Ship-Confidence release readiness audit for this project and inspect Teamwork Graph context."*
+4. **Test the Autonomous openFDA Trigger:** Create a new Jira issue titled *"Infusion Pump Bolus Calibration Firmware v4.3"*. Within seconds, refresh the issue to see MedTrace IQ automatically add the `medtrace-fda-hold` label and post a structured `[MedTrace IQ Autonomous FDA Monitor]` Class I alert comment with a SHA-256 entry ID!
+5. **Explore the 5-Tab Executive Cockpit:**
+   - **Release Readiness Cockpit:** Click cells in the **3×3 ISO 14971 Risk × Release Verdict Matrix** to cross-filter; click **Inspect** on any issue to open the Slide-Over Audit Drawer and toggle the **What-If Simulator**.
+   - **Blast-Radius & TWG Graph:** Inspect live `openFDA` → `Jira` → `TWG Confluence SOP` (`TWG_GOVERNS_SOP`) → `TWG Teams` provenance.
+   - **Live openFDA Recall Radar:** Search live FDA recalls and click **+ Create Impact CAPA**.
+   - **DHF · 21 CFR Part 11 · Policy:** Click **🔐 Verify Chain Now** to run live SHA-256 cryptographic chain verification and export both `.md` and `.json` audit packs.
+   - **Rovo · MCP · Automation:** Inspect live Teamwork Graph telemetry (`ok=true`) and copy the 7-tool Rovo MCP config.
+6. **Test the Executive Dashboard Gadget & Physical Release Gate:**
+   - Open **Jira Dashboards → Add gadget → MedTrace IQ Executive Release Readiness**.
+   - Optionally add **MedTrace IQ FDA/ISO Release Gate** under **Project Settings → Workflows → Transition Rules → Validators** to enforce physical release blocking.
+7. **Test Rovo Copilot (7 Tools):** Open **Rovo Chat** → select **MedTrace QMS Copilot** → ask: *"Run a Ship-Confidence release readiness audit for project MED and verify our 21 CFR Part 11 SHA-256 audit chain."*

@@ -141,6 +141,11 @@ export default function IssueGuardrailPanel({ issueKey }) {
                   ? `Latest QA Decision: ${ev.signOff.decision} by ${ev.signOff.actorName} (${ev.signOff.id})`
                   : 'No formal QA regulatory sign-off recorded yet'}
               </div>
+              {ev.signOff?.entryHash && (
+                <div className="mono kpi-sub" style={{ fontSize: 11, marginTop: 2 }}>
+                  🔐 21 CFR Part 11 SHA-256: {ev.signOff.entryHash.slice(0, 24)}…
+                </div>
+              )}
             </div>
           </div>
 
@@ -239,7 +244,21 @@ export default function IssueGuardrailPanel({ issueKey }) {
             <span className="badge badge-neutral">PRs/Deploys: {twg.devArtifacts?.length || 0}</span>
           </div>
 
-          {twg.confluencePages?.length > 0 && (
+          {ev.matchedSops?.length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Auto-Matched Confluence SOPs (Subsystem Match):</div>
+              {ev.matchedSops.map((pg) => (
+                <div key={pg.id} style={{ fontSize: 12, marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 6, background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                  <span>📄 <strong>{pg.title}</strong> <span style={{ color: 'var(--text-muted)' }}>({pg.ownerName})</span></span>
+                  {pg.webUrl && (
+                    <button type="button" className="btn btn-sm" onClick={() => openExternalUrl(pg.webUrl)}>Open ↗</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {twg.confluencePages?.length > 0 && !ev.matchedSops?.length && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Connected Confluence Documents (TWG):</div>
               {twg.confluencePages.slice(0, 3).map((pg) => (

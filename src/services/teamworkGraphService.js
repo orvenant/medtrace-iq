@@ -4,16 +4,29 @@ import api from '@forge/api';
  * Execute a GraphQL query against Atlassian Teamwork Graph using api.asUser().requestTeamworkGraph.
  * Verified against live Teamwork Graph SDL curated queries & union node fragments.
  */
-async function runTwgQuery(queryName, graphqlQuery, variables = {}) {
+async function runTwgQuery(queryName, graphqlQuery, variables = {}, attempt = 1) {
   const startedAt = Date.now();
   try {
     const response = await api.asUser().requestTeamworkGraph(graphqlQuery, variables);
     const status = response.status;
     const json = await response.json();
     const durationMs = Date.now() - startedAt;
+    const warnings = json?.errors?.map((e) => e.message) || [];
 
-    if (!response.ok || (json?.errors && json.errors.length > 0 && !json?.data)) {
-      const errMsg = json?.errors?.[0]?.message || `HTTP ${status}`;
+    // Retry once on transient Teamwork Graph preview org-auth propagation errors
+    if (
+      attempt === 1 &&
+      warnings.some((w) => /not permitted to query this organization/i.test(w))
+    ) {
+      await new Promise((r) => setTimeout(r, 300));
+      return runTwgQuery(queryName, graphqlQuery, variables, 2);
+    }
+
+    const dataValues = json?.data && typeof json.data === 'object' ? Object.values(json.data) : [];
+    const allDataNull = dataValues.length === 0 || dataValues.every((v) => v === null || v === undefined);
+
+    if (!response.ok || (warnings.length > 0 && allDataNull)) {
+      const errMsg = warnings[0] || `HTTP ${status}`;
       console.warn(`[TWG:${queryName}] error:`, errMsg);
       return {
         queryName,
@@ -22,7 +35,12 @@ async function runTwgQuery(queryName, graphqlQuery, variables = {}) {
         durationMs,
         data: null,
         error: errMsg,
+        warnings,
       };
+    }
+
+    if (warnings.length > 0) {
+      console.warn(`[TWG:${queryName}] partial errors:`, warnings.join(' | '));
     }
 
     return {
@@ -31,7 +49,7 @@ async function runTwgQuery(queryName, graphqlQuery, variables = {}) {
       status,
       durationMs,
       data: json?.data || null,
-      warnings: json?.errors?.map((e) => e.message) || [],
+      warnings,
     };
   } catch (err) {
     return {
@@ -54,7 +72,10 @@ export function buildJiraIssueAri(cloudId, issueId) {
 }
 
 export function buildUserAri(accountId) {
-  return `ari:cloud:identity::user/${accountId}`;
+  const raw = String(accountId || '').trim();
+  if (!raw) return null;
+  if (raw.startsWith('ari:cloud:identity::user/')) return raw;
+  return `ari:cloud:identity::user/${raw}`;
 }
 
 export async function pingTeamworkGraph() {
@@ -334,6 +355,10 @@ export async function fetchProjectTeamworkGraph({ cloudId, projectId, accountId 
       warnings: r.warnings || [],
     })),
   ];
+
+  console.log(
+    `[TWG:project] connected=${echoRes.connected} spaceAri=${spaceAri || 'NONE'} userAri=${userAri || 'NONE'} teams=${teamsMap.size} sops=${confluencePages.length} goals=${goals.length} items=${graphWorkItems.length}`
+  );
 
   return {
     connected: echoRes.connected,

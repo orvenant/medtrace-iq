@@ -5,6 +5,7 @@ import {
   matchRecallsForIssue,
   matchSopsForIssue,
   evaluateIssueCompliance,
+  computeExecutiveAnalytics,
   buildBlastRadiusGraph,
   generateAuditMarkdown,
 } from '../services/complianceEngine.js';
@@ -204,4 +205,78 @@ test('matchSopsForIssue directly connects Teamwork Graph SOPs to matching Jira d
     twg: { confluencePages: sops, teams: [{ id: 't1', displayName: 'Team Vault' }] },
   });
   assert.ok(graph.edges.some((e) => e.from === 'issue:MED-1' && e.to === 'sop:pg-1' && e.label === 'TWG_GOVERNS_SOP'));
+});
+
+test('computeExecutiveAnalytics aggregates 5-pillar averages and ISO 14971 Risk x Verdict matrix', () => {
+  const holdEv = evaluateIssueCompliance({
+    issue: {
+      id: '20001',
+      key: 'MED-1',
+      summary: 'Cardiac Pacemaker Firmware Update',
+      description: 'Class III cardiac telemetry update.',
+      status: 'In Progress',
+      priority: 'Highest',
+      assigneeName: 'Amin',
+      labels: ['pacemaker'],
+    },
+    matchedRecalls: [
+      { recallNumber: 'Z-1001-2026', classification: 'Class I', matchedKeyword: 'pacemaker' },
+    ],
+  });
+
+  const readyEv = evaluateIssueCompliance({
+    issue: {
+      id: '20002',
+      key: 'MED-5',
+      summary: 'CGM Sensor Drift Calibration',
+      description: 'Detailed FDA 21 CFR 820 verification protocol and ISO 14971 hazard mitigation for continuous glucose calibration.',
+      status: 'Done',
+      priority: 'Medium',
+      assigneeName: 'Amin',
+      labels: ['glucose', 'iso-14971'],
+      issueLinks: [{ id: 'l1' }],
+    },
+    checklist: {
+      designVerification: true,
+      iso14971RiskReview: true,
+      sopOwnerVerified: true,
+      fdaRecallReviewed: true,
+    },
+    signOff: { decision: 'Approved', actorName: 'QA Director', rationale: 'Verified.' },
+    twgSignals: {
+      teams: [{ id: 't1', displayName: 'QA' }],
+      confluencePages: [{ id: 'p1', title: 'SOP-CGM-101' }],
+      goals: [{ id: 'g1', name: 'Q4 Ship' }],
+    },
+  });
+
+  const analytics = computeExecutiveAnalytics([holdEv, readyEv]);
+  assert.equal(analytics.pillarAverages.length, 5);
+  assert.equal(analytics.riskMatrix.Critical.HOLD, 1);
+  assert.equal(analytics.riskMatrix.High.SHIP_READY, 1);
+
+  const md = generateAuditMarkdown({
+    project: { key: 'MED', name: 'MedTrace Devices' },
+    summary: {
+      averageScore: 70,
+      overallVerdict: 'HOLD',
+      totalIssues: 2,
+      shipReadyCount: 1,
+      conditionalCount: 0,
+      holdCount: 1,
+      capaCount: 0,
+    },
+    evaluations: [holdEv, readyEv],
+    twg: { connected: true, teams: [{}], confluencePages: [{}], goals: [{}] },
+    ledger: [],
+    chainVerification: {
+      valid: true,
+      verifiedChainedEntries: 2,
+      headHashShort: 'abcdef1234567890',
+    },
+  });
+
+  assert.ok(md.includes('21 CFR Part 11 Cryptographic Integrity'));
+  assert.ok(md.includes('VERIFIED VALID (SHA-256 Hash Chain)'));
+  assert.ok(md.includes('abcdef1234567890'));
 });

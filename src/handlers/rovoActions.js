@@ -3,10 +3,12 @@ import {
   buildIssueComplianceData,
   performCreateCapa,
   performRegulatorySignOff,
+  performVerifyAuditChain,
 } from './orchestrator';
 import { searchFdaDeviceRecalls } from '../services/openFdaService';
 import { fetchProjectTeamworkGraph, fetchIssueTeamworkGraph } from '../services/teamworkGraphService';
 import { getCurrentUser, getProjectDetails, getIssueDetails } from '../services/jiraService';
+import { setCachedTwgSnapshot } from '../services/storageService';
 
 function getActionContext(context) {
   return {
@@ -150,6 +152,7 @@ export async function actQueryTeamworkGraph(payload, context) {
         projectId: project.id,
         accountId: effectiveAccountId,
       });
+      await setCachedTwgSnapshot(project.key, twg);
       return { ok: true, scope: 'project', projectKey: project.key, teamworkGraph: twg };
     }
 
@@ -204,5 +207,18 @@ export async function actRecordRegulatorySignoff(payload, context) {
     return { ok: true, ...result };
   } catch (err) {
     return { ok: false, error: err?.message || 'Failed to record regulatory sign-off' };
+  }
+}
+
+export async function actVerifyAuditChain(payload) {
+  try {
+    const projectKey = String(payload?.projectKey || '').trim().toUpperCase();
+    if (!projectKey) {
+      return { ok: false, error: 'Please provide a Jira projectKey (e.g., MED) to verify its 21 CFR Part 11 audit chain.' };
+    }
+    const verification = await performVerifyAuditChain({ projectKey });
+    return { ok: true, projectKey, verification };
+  } catch (err) {
+    return { ok: false, error: err?.message || 'Audit chain verification failed' };
   }
 }
