@@ -147,7 +147,7 @@ export default function ContextGraphSvg({ graph = { nodes: [], edges: [] }, onCr
 
         <svg
           className="graph-canvas"
-          style={{ height: Math.max(430, layout.height) }}
+          style={{ aspectRatio: `${layout.width} / ${layout.height}`, maxHeight: Math.max(460, layout.height) }}
           viewBox={`0 0 ${layout.width} ${layout.height}`}
           role="img"
           aria-label="MedTrace IQ four-layer regulatory blast radius and Teamwork Graph topology"

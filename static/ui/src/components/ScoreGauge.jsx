@@ -35,8 +35,14 @@ export default function ScoreGauge({ score = 0, verdict = 'CONDITIONAL', size = 
         : 'var(--warn)';
 
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={`Ship Confidence Score ${clamped} out of 100`}>
+    <div style={{ display: 'inline-flex', alignItems: 'center', flex: 'none', maxWidth: '100%' }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
+        aria-label={`Ship Confidence Score ${clamped} out of 100`}
+      >
         <circle
           cx={size / 2}
           cy={size / 2}

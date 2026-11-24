@@ -377,13 +377,15 @@ export default function ProjectCockpit({ projectKey }) {
 
       {/* Executive KPI Strip */}
       <section className="kpi-grid" aria-label="Release readiness summary metrics">
-        <div className="kpi-card" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div className="kpi-label">Ship Confidence</div>
-            <div style={{ marginTop: 6 }}>{verdictBadge(s.overallVerdict)}</div>
-            <div className="kpi-sub" style={{ marginTop: 4 }}>Gate ≥ {data.policy.minConfidenceToShip}/100</div>
+        <div className="kpi-card kpi-card-score">
+          <div className="kpi-score-body">
+            <div className="kpi-score-meta">
+              <div className="kpi-label">Ship Confidence</div>
+              <div style={{ marginTop: 6 }}>{verdictBadge(s.overallVerdict)}</div>
+              <div className="kpi-sub" style={{ marginTop: 4 }}>Gate ≥ {data.policy.minConfidenceToShip}/100</div>
+            </div>
+            <ScoreGauge score={s.averageScore} verdict={s.overallVerdict} size={66} />
           </div>
-          <ScoreGauge score={s.averageScore} verdict={s.overallVerdict} size={78} />
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Design Controls Audited</div>
@@ -412,7 +414,7 @@ export default function ProjectCockpit({ projectKey }) {
           <div className="kpi-value" style={{ color: 'var(--brand)' }}>
             {s.twgTeamsCount + s.twgSopCount + s.twgGoalsCount}
           </div>
-          <div className="kpi-sub inline-flex-row" style={{ flexWrap: 'wrap' }}>
+          <div className="kpi-sub twg-sub-row">
             <StatusDot tone={s.twgConnected ? 'ok' : 'warn'} />
             <span>{s.twgConnected ? 'Live TWG' : 'Pending Scope'} · {s.twgTeamsCount} Teams · {s.twgSopCount} SOPs · {s.twgGoalsCount} Goals</span>
           </div>

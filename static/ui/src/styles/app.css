@@ -288,7 +288,7 @@ body {
 /* KPI Strip */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -301,6 +301,50 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-inline-size: 0;
+}
+
+.kpi-card-score {
+  container: kpi-score / inline-size;
+  padding: 14px 12px;
+  justify-content: center;
+}
+
+.kpi-score-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-inline-size: 0;
+}
+
+.kpi-score-meta {
+  min-inline-size: 0;
+}
+
+@container kpi-score (min-width: 188px) {
+  .kpi-score-body {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+}
+
+.twg-sub-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.twg-sub-row .status-dot {
+  margin-top: 5px;
+}
+
+.twg-sub-row > span:last-child {
+  min-inline-size: 0;
+  flex: 1;
 }
 
 .kpi-label {
@@ -331,6 +375,7 @@ body {
   border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
   scroll-snap-type: inline proximity;
+  scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
 
@@ -354,7 +399,7 @@ body {
   background: transparent;
   border: 0;
   color: var(--text-muted);
-  padding: 10px 14px 12px;
+  padding: 10px 12px 11px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -514,7 +559,7 @@ body {
 /* Score Progress Bars */
 .pillar-row {
   display: grid;
-  grid-template-columns: 165px 1fr 48px;
+  grid-template-columns: minmax(110px, 165px) minmax(0, 1fr) 46px;
   align-items: center;
   gap: 10px;
   font-size: 12px;
@@ -632,7 +677,7 @@ dialog.mt-drawer::backdrop {
 /* Risk x Readiness Interactive Heatmap */
 .analytics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -784,7 +829,7 @@ dialog.mt-drawer::backdrop {
 
 .graph-canvas {
   width: 100%;
-  height: 460px;
+  height: auto;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
