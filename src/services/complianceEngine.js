@@ -206,8 +206,20 @@ export function analyzeDesignControls(issue) {
 }
 
 export function detectDeviceSubsystem(issue) {
+  const summaryText = issue.summary || '';
+  for (const sub of SUBSYSTEM_CATALOG) {
+    if (sub.patterns.some((re) => re.test(summaryText))) {
+      return {
+        id: sub.id,
+        label: sub.label,
+        fdaKeyword: sub.fdaKeyword,
+        deviceClass: sub.deviceClass,
+        matchedDirectly: true,
+      };
+    }
+  }
+
   const haystack = [
-    issue.summary || '',
     issue.description || '',
     ...(issue.labels || []),
     ...(issue.components || []),

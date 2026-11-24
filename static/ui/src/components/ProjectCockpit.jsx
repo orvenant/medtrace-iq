@@ -274,6 +274,19 @@ export default function ProjectCockpit({ projectKey }) {
     }
   };
 
+  const handleApplyChecklistPatch = async (issueKey, patch) => {
+    setBusy(true);
+    try {
+      await callBackend('updateIssueChecklist', { issueKey, patch });
+      await loadCockpit();
+      setToast(`Saved ${Object.keys(patch).length} ISO 13485 gate control(s) for ${issueKey} to Forge KVS.`);
+    } catch (err) {
+      setError(err?.message || 'Checklist save failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleMatrixCellClick = (tier, verdict) => {
     if (riskFilter === tier && verdictFilter === verdict) {
       setRiskFilter('ALL');
@@ -1139,6 +1152,7 @@ export default function ProjectCockpit({ projectKey }) {
         policy={data.policy}
         onClose={() => setSelectedIssueKey('')}
         onToggleChecklist={handleToggleChecklist}
+        onApplyChecklistPatch={handleApplyChecklistPatch}
         onOpenSignOff={(key) => {
           setSelectedIssueKey('');
           setSignOffKey(key);

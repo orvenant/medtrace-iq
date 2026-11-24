@@ -21,6 +21,7 @@ export default function IssueAuditDrawer({
   policy,
   onClose,
   onToggleChecklist,
+  onApplyChecklistPatch,
   onOpenSignOff,
   onOpenCapa,
   onAskRovo,
@@ -89,12 +90,16 @@ export default function IssueAuditDrawer({
     const p4 = effFda ? 20 : p.fdaRecallClearance.score;
     const p5 = effQa ? 10 : p.qaSignOff.score;
 
-    let score = Math.max(0, Math.min(100, p1 + p2 + p3 + p4 + p5));
+    const rawScore = Math.max(0, Math.min(100, p1 + p2 + p3 + p4 + p5));
+    let score = rawScore;
     const hasUnmitigatedClassI = evaluation.classICount > 0 && !effFda;
+    let cappedBy = null;
 
     if (evaluation.signOff?.decision === 'Hold' && !simFlags.qaApproved) {
+      if (score > 39) cappedBy = 'QA_HOLD';
       score = Math.min(score, 39);
     } else if (blockOnClassI && hasUnmitigatedClassI) {
+      if (score > 49) cappedBy = 'CLASS_I';
       score = Math.min(score, 49);
     }
 
@@ -106,8 +111,10 @@ export default function IssueAuditDrawer({
     }
 
     return {
+      rawScore,
       score,
       verdict,
+      cappedBy,
       delta: score - evaluation.score,
     };
   }, [evaluation, policy, simFlags]);
@@ -119,13 +126,37 @@ export default function IssueAuditDrawer({
   const displayedScore = anySimActive && simulated ? simulated.score : evaluation.score;
   const displayedVerdict = anySimActive && simulated ? simulated.verdict : evaluation.verdict;
 
+  const p = evaluation.pillars;
+  const vvGain = Math.min(15, Math.max(0, 25 - p.verificationValidation.score));
+  const isoGain = Math.min(6, Math.max(0, 25 - p.verificationValidation.score));
+  const sopGain = Math.min(
+    Math.max(3, 10 - Math.min(10, p.sopOrgContext.score)),
+    Math.max(0, 20 - p.sopOrgContext.score)
+  );
+  const fdaGain = Math.max(0, 20 - p.fdaRecallClearance.score);
+  const qaGain = Math.max(0, 10 - p.qaSignOff.score);
+
   const simOptions = [
-    { key: 'designVerification', label: 'V&V Passed', pts: '+15', alreadyDone: Boolean(evaluation.checklist?.designVerification) },
-    { key: 'iso14971RiskReview', label: 'ISO 14971 Risk', pts: '+6', alreadyDone: Boolean(evaluation.checklist?.iso14971RiskReview) },
-    { key: 'sopOwnerVerified', label: 'SOP Owner', pts: '+10', alreadyDone: Boolean(evaluation.checklist?.sopOwnerVerified) },
-    { key: 'fdaRecallReviewed', label: 'openFDA Reviewed', pts: evaluation.classICount > 0 ? '+18 & Lift Hold' : '+10', alreadyDone: Boolean(evaluation.checklist?.fdaRecallReviewed) },
-    { key: 'qaApproved', label: 'QA Approved', pts: '+10', alreadyDone: evaluation.signOff?.decision === 'Approved' },
+    { key: 'designVerification', label: 'V&V Passed', pts: `+${vvGain}`, alreadyDone: Boolean(evaluation.checklist?.designVerification) },
+    { key: 'iso14971RiskReview', label: 'ISO 14971 Risk', pts: `+${isoGain}`, alreadyDone: Boolean(evaluation.checklist?.iso14971RiskReview) },
+    { key: 'sopOwnerVerified', label: 'SOP Owner', pts: `+${sopGain}`, alreadyDone: Boolean(evaluation.checklist?.sopOwnerVerified) },
+    {
+      key: 'fdaRecallReviewed',
+      label: 'openFDA Reviewed',
+      pts: evaluation.classICount > 0 ? `+${fdaGain} & Lift Hold` : `+${fdaGain}`,
+      isHoldBlocker: evaluation.classICount > 0,
+      alreadyDone: Boolean(evaluation.checklist?.fdaRecallReviewed),
+    },
+    { key: 'qaApproved', label: 'QA Approved', pts: `+${qaGain}`, alreadyDone: evaluation.signOff?.decision === 'Approved' },
   ].filter((o) => !o.alreadyDone);
+
+  const persistableSimPatch = {};
+  ['designVerification', 'iso14971RiskReview', 'sopOwnerVerified', 'fdaRecallReviewed'].forEach((k) => {
+    if (simFlags[k] && !evaluation.checklist?.[k]) {
+      persistableSimPatch[k] = true;
+    }
+  });
+  const persistableCount = Object.keys(persistableSimPatch).length;
 
   const toggleSim = (k) => setSimFlags((prev) => ({ ...prev, [k]: !prev[k] }));
   const simulateAll = () => {
@@ -135,6 +166,17 @@ export default function IssueAuditDrawer({
     });
     setSimFlags((prev) => ({ ...prev, ...next }));
   };
+  const handleApplySimulatedGates = async () => {
+    if (!persistableCount || !onApplyChecklistPatch) return;
+    await onApplyChecklistPatch(evaluation.issueKey, persistableSimPatch);
+    setSimFlags((prev) => ({
+      ...prev,
+      designVerification: false,
+      iso14971RiskReview: false,
+      sopOwnerVerified: false,
+      fdaRecallReviewed: false,
+    }));
+  };
 
   return (
     <dialog ref={dialogRef} className="mt-drawer" aria-labelledby={titleId} onClose={handleClose}>
@@ -143,7 +185,7 @@ export default function IssueAuditDrawer({
           <div className="pill-row" style={{ marginBottom: 4 }}>
             <strong className="mono">{evaluation.issueKey}</strong>
             {verdictBadge(displayedVerdict)}
-            {anySimActive && <span className="badge badge-purple">What-If Active</span>}
+            {anySimActive && <span className="badge badge-purple">What-If Preview</span>}
           </div>
           <h2 id={titleId} style={{ fontSize: 15 }}>{evaluation.summary}</h2>
         </div>
@@ -163,7 +205,9 @@ export default function IssueAuditDrawer({
                 <div className="kpi-sub">{evaluation.subsystem.deviceClass} · {evaluation.riskTier} Risk</div>
                 <div className="kpi-sub" style={{ marginTop: 4 }}>
                   {anySimActive && simulated
-                    ? `Simulated delta: ${simulated.delta >= 0 ? '+' : ''}${simulated.delta} pts (${evaluation.score} → ${simulated.score})`
+                    ? simulated.cappedBy
+                      ? `Raw score: ${simulated.rawScore}/100 · Capped at ${simulated.score}/100 by active Hold`
+                      : `Simulated delta: ${simulated.delta >= 0 ? '+' : ''}${simulated.delta} pts (${evaluation.score} → ${simulated.score})`
                     : `${evaluation.blockingGaps.length} open gate(s) before release`}
                 </div>
               </div>
@@ -173,6 +217,11 @@ export default function IssueAuditDrawer({
                 <button type="button" className="btn btn-sm" onClick={simulateAll}>
                   <IconSliders size={13} /> Simulate All
                 </button>
+                {persistableCount > 0 && onApplyChecklistPatch && (
+                  <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={handleApplySimulatedGates}>
+                    Save {persistableCount} Gate{persistableCount > 1 ? 's' : ''} to KVS
+                  </button>
+                )}
                 {anySimActive && (
                   <button
                     type="button"
@@ -196,15 +245,17 @@ export default function IssueAuditDrawer({
 
           {simOptions.length > 0 && (
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Interactive What-If Gate Simulator (toggle open gates to project score)
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  What-If Gate Simulator (Preview Only — Click Save or Use Checkboxes Below to Persist)
+                </div>
               </div>
               <div className="sim-grid">
                 {simOptions.map((opt) => (
                   <button
                     key={opt.key}
                     type="button"
-                    className="sim-toggle"
+                    className={`sim-toggle ${opt.isHoldBlocker && simulated?.cappedBy === 'CLASS_I' ? 'sim-toggle-blocker' : ''}`}
                     aria-pressed={Boolean(simFlags[opt.key])}
                     onClick={() => toggleSim(opt.key)}
                   >
@@ -213,6 +264,19 @@ export default function IssueAuditDrawer({
                   </button>
                 ))}
               </div>
+              {anySimActive && simulated?.cappedBy === 'CLASS_I' && (
+                <div className="sim-cap-notice" role="status">
+                  <strong>FDA Class I Safety Cap Active (49/100 max):</strong> Your selected controls raise the raw score to{' '}
+                  <strong className="mono">{simulated.rawScore}/100</strong>, but FDA 21 CFR 820 policy physically caps release at 49/100 until{' '}
+                  <strong>openFDA Reviewed</strong> is toggled to lift the Class I Hold.
+                </div>
+              )}
+              {anySimActive && simulated?.cappedBy === 'QA_HOLD' && (
+                <div className="sim-cap-notice" role="status">
+                  <strong>QA Hold Cap Active (39/100 max):</strong> Raw score is{' '}
+                  <strong className="mono">{simulated.rawScore}/100</strong> — toggle <strong>QA Approved</strong> (or record a new 21 CFR Part 11 Sign-Off) to lift QA Hold.
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -935,6 +935,29 @@ dialog.mt-drawer::backdrop {
   border-color: var(--purple);
 }
 
+.sim-toggle-blocker {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.sim-cap-notice {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+}
+
+dialog.mt-drawer .dialog-foot {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding-inline-end: 76px;
+}
+
 @keyframes mt-ring-pulse {
   0% { opacity: 0.85; stroke-width: 2; }
   50% { opacity: 0.25; stroke-width: 4.5; }
