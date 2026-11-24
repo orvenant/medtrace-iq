@@ -19,13 +19,10 @@
 2. Select **MedTrace IQ** → toggle on external MCP tool exposure for all 7 tools (`get-project-readiness`, `analyze-issue-compliance`, `search-fda-recalls`, `query-teamwork-graph-context`, `create-capa-ticket`, `record-regulatory-signoff`, `verify-audit-chain`).
 3. Verify OAuth 2.1 connection to `https://mcp.atlassian.com/forge/f6caf1a8-53e4-49e6-8e26-f98807c8151c`.
 
-## 3. Submit Free App Listing to Atlassian Marketplace (Bonus Prize: 6 × $1,500)
-1. Go to `https://marketplace.atlassian.com/manage/vendors` (create your free Marketplace Partner vendor profile if first time).
-2. Click **Publish a new app** → choose **Forge app** → select **MedTrace IQ** (`production` environment).
-3. Pricing: **Free** (zero billing friction; full compatibility with single-app Jira listing).
-4. Provide:
-   - App Summary & Description (from `README.md`)
-   - Privacy Policy URL (`https://github.com/orvenant/medtrace-iq/blob/main/PRIVACY.md`)
-   - Support Email (`am.ebrahimzadeh@gmail.com`)
-   - 3 crisp screenshots captured from `one-atlas-ypfd.atlassian.net` (v3 Cockpit + 3×3 Risk Matrix, Blast-Radius & TWG Graph, Slide-Over Audit Drawer / Executive Dashboard Gadget / Rovo Copilot).
-5. Submit for Marketplace review **as early as possible (before Dec 10, 2026)** so Atlassian's review completes well ahead of the Dec 22, 2026 Codegeist deadline, and copy the live Marketplace listing URL or AMKT review ticket URL into the Codegeist 2026 Devpost submission form!
+## 3. Free App Listing on Atlassian Marketplace (SUBMITTED FOR APPROVAL ✅ — Bonus Prize: 6 × $1,500)
+- **Partner / Vendor:** `Orvenant Labs` (`https://marketplace.atlassian.com/manage/vendors/717279518/addons`)
+- **App Key:** `com.orvenant.medtrace.iq` (`App ID: 1277968379`)
+- **Submitted Version:** `2.11.0` (Build `2011000`, Free, Apache 2.0, Bonterms Standard EULA, `Hero & highlights` with 960×600 Hero + 3× 1840×900 Highlights)
+- **Marketplace Listing URL:** `https://marketplace.atlassian.com/apps/1277968379`
+- **Official Marketplace Review Ticket:** **`ECOHELP-189734`** (`http://go.atlassian.com/marketplace-support/ECOHELP-189734`)
+- **Action:** Monitor `am.ebrahimzadeh@gmail.com` for any Atlassian Marketplace reviewer questions on `ECOHELP-189734` and paste the live listing URL + `ECOHELP-189734` into the Codegeist 2026 Devpost submission form!
