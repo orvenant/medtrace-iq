@@ -2,7 +2,8 @@
 
 > **Codegeist 2026: "Build with context. Ship with confidence."**
 > **Category:** Apps for Specialized Industries (Healthcare, MedTech & Life Sciences)
-> **Bonus Integrations (All 4):** Rovo Agent + Reusable Rovo Skills (`rovo:agent`, `rovo:skill`, 7 `action`) · Atlassian Rovo MCP (`rovo:mcp` + `SKILL.md`) · Atlassian Teamwork Graph Curated Queries (`requestTeamworkGraph`) · Atlassian Marketplace Free Listing
+> **Bonus Integrations (All 4):** Rovo Agent + Reusable Rovo Skills (`rovo:agent`, `rovo:skill`, 7 `action`) · Atlassian Rovo MCP (`rovo:mcp` + `SKILL.md`) · Atlassian Teamwork Graph Curated Queries (`requestTeamworkGraph`) · Atlassian Marketplace Free Listing (`Orvenant Labs`)
+> **Live Demo Video (3m 52s):** https://youtu.be/ep92BoPBlHM · **Marketplace:** https://marketplace.atlassian.com/apps/1277968379 · **Security & Privacy:** [SECURITY.md](./SECURITY.md) | [PRIVACY.md](./PRIVACY.md)
 
 ---
 
